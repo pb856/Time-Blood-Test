@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Time Blood Test</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --accent: #5b5ff5;
+    --Business: #3b82f6;
+    --Training: #f97316;
+    --School: #a855f7;
+    --Gaming: #ef4444;
+    --Consumption: #f43f5e;
+    --Life-Admin: #64748b;
+    --Social: #ec4899;
+    --Recovery: #14b8a6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  .nav { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; height: 48px; }
+  .nav-title { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab { background: none; border: none; color: var(--muted); font-size: 13px; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all .15s; }
+  .nav-tab.active { background: var(--surface2); color: var(--text); }
+  .nav-tab:hover:not(.active) { color: var(--text); }
+
+  .view { display: none; padding: 16px; max-width: 720px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  /* LOG */
+  .log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .log-header h2 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .timer-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
+  .timer-btn.running { background: #ef4444; border-color: #ef4444; color: white; }
+  .timer-running-display { background: var(--surface); border: 1px solid #ef4444; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: none; align-items: center; gap: 10px; font-size: 13px; }
+  .timer-running-display.visible { display: flex; }
+  .timer-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .timer-label { flex: 1; }
+  .timer-elapsed { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .cat-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 4px; cursor: pointer; font-size: 11px; font-weight: 600; text-align: center; transition: all .12s; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cat-btn:hover { border-color: var(--muted); color: var(--text); }
+  .cat-btn.selected { color: white; }
+  .cat-btn[data-cat="Business"].selected  { background: var(--Business);    border-color: var(--Business); }
+  .cat-btn[data-cat="Training"].selected  { background: var(--Training);    border-color: var(--Training); }
+  .cat-btn[data-cat="School"].selected    { background: var(--School);      border-color: var(--School); }
+  .cat-btn[data-cat="Gaming"].selected    { background: var(--Gaming);      border-color: var(--Gaming); }
+  .cat-btn[data-cat="Consumption"].selected{ background: var(--Consumption);border-color: var(--Consumption); }
+  .cat-btn[data-cat="Life Admin"].selected{ background: var(--Life-Admin);  border-color: var(--Life-Admin); }
+  .cat-btn[data-cat="Social"].selected    { background: var(--Social);      border-color: var(--Social); }
+  .cat-btn[data-cat="Recovery"].selected  { background: var(--Recovery);    border-color: var(--Recovery); }
+
+  .log-form { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+  .form-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
+  .form-row:last-child { margin-bottom: 0; }
+  .input-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .input-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  input[type="text"], input[type="time"] {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-size: 14px; padding: 8px 10px; outline: none;
+    transition: border-color .12s; width: 100%; font-family: inherit;
+  }
+  input:focus { border-color: var(--accent); }
+
+  /* QUALITY 1-10 */
+  .q-row { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .q-btn { aspect-ratio: 1; border-radius: 5px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .1s; display: flex; align-items: center; justify-content: center; }
+  .q-btn:hover { border-color: var(--muted); color: var(--text); }
+  .q-btn.selected { color: white !important; border-color: transparent !important; }
+  .q1  { --qc: #ef4444; } .q2  { --qc: #f97316; } .q3  { --qc: #fb923c; } .q4  { --qc: #f59e0b; }
+  .q5  { --qc: #eab308; } .q6  { --qc: #84cc16; } .q7  { --qc: #22c55e; } .q8  { --qc: #10b981; }
+  .q9  { --qc: #14b8a6; } .q10 { --qc: #6366f1; }
+  .q-btn.selected { background: var(--qc); }
+  .q-label-row { display: flex; justify-content: space-between; margin-top: 3px; }
+  .q-label-row span { font-size: 9px; color: var(--muted); }
+
+  .submit-btn { background: var(--accent); border: none; color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; width: 100%; margin-top: 12px; }
+  .submit-btn:hover { background: #4a4fe0; }
+  .submit-btn:active { transform: scale(.98); }
+
+  .section-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .entry-list { display: flex; flex-direction: column; gap: 6px; }
+  .entry-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+  .entry-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .entry-info { flex: 1; min-width: 0; }
+  .entry-what { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entry-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .entry-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .entry-dur { font-size: 12px; font-weight: 600; }
+  .entry-q { font-size: 11px; color: var(--muted); }
+  .entry-del { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 4px; font-size: 14px; }
+  .entry-del:hover { color: #ef4444; }
+
+  /* DASHBOARD */
+  .score-hero { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 12px; text-align: center; }
+  .score-hero-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .score-number { font-size: 64px; font-weight: 800; line-height: 1; }
+  .score-denom { font-size: 22px; font-weight: 400; color: var(--muted); }
+  .score-grade { font-size: 14px; font-weight: 600; margin-top: 6px; letter-spacing: 0.08em; }
+  .score-bar-wrap { background: var(--surface2); border-radius: 4px; height: 6px; margin: 12px 0 8px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 4px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+  .score-formula { font-size: 11px; color: var(--muted); }
+  .score-formula strong { color: var(--text); font-weight: 600; }
+
+  /* SCORE CHART */
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .chart-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .chart-periods { display: flex; gap: 4px; }
+  .period-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 5px; cursor: pointer; transition: all .12s; }
+  .period-btn.active { background: var(--surface2); border-color: var(--accent); color: var(--text); }
+  .period-btn:hover:not(.active) { color: var(--text); }
+  .chart-svg-wrap { width: 100%; overflow: hidden; position: relative; }
+  .chart-svg-wrap svg { width: 100%; display: block; }
+  .chart-tooltip { position: absolute; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 11px; pointer-events: none; opacity: 0; transition: opacity .1s; white-space: nowrap; z-index: 10; }
+  .chart-tooltip .tt-date { color: var(--muted); margin-bottom: 2px; }
+  .chart-tooltip .tt-score { font-size: 16px; font-weight: 700; }
+  .chart-empty { text-align: center; padding: 30px; color: var(--muted); font-size: 12px; }
+
+  .time-alloc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .alloc-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; }
+  .alloc-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; margin-bottom: 10px; }
+  .alloc-seg { height: 100%; border-radius: 3px; min-width: 2px; }
+  .alloc-rows { display: flex; flex-direction: column; gap: 6px; }
+  .alloc-row { display: flex; align-items: center; gap: 8px; }
+  .alloc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alloc-name { font-size: 12px; flex: 1; }
+  .alloc-hrs { font-size: 12px; font-weight: 600; min-width: 36px; text-align: right; }
+  .alloc-pct { font-size: 11px; color: var(--muted); min-width: 38px; text-align: right; }
+  .alloc-mini-bar { flex: 2; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .alloc-mini-fill { height: 100%; border-radius: 2px; }
+
+  .cat-breakdown { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .cat-row { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .cat-row-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .cat-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .cat-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .cat-hours { font-size: 13px; font-weight: 600; }
+  .cat-tag { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 5px; border-radius: 3px; }
+  .tag-productive   { background: #14532d33; color: #22c55e; }
+  .tag-neutral      { background: #1e293b;   color: #64748b; }
+  .tag-unproductive { background: #7f1d1d33; color: #ef4444; }
+  .cat-stats { display: flex; gap: 12px; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; }
+
+  /* 7-DAY */
+  .score-history { display: flex; gap: 6px; margin-bottom: 16px; }
+  .score-day { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px; text-align: center; }
+  .score-day-label { font-size: 9px; color: var(--muted); margin-bottom: 4px; }
+  .score-day-val { font-size: 16px; font-weight: 700; }
+  .score-day-bar-wrap { height: 3px; background: var(--surface2); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .score-day-bar-fill { height: 100%; border-radius: 2px; }
+
+  .week-grid { display: flex; flex-direction: column; gap: 8px; }
+  .day-row { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .day-label { font-size: 12px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .day-label-right { color: var(--muted); font-weight: 400; font-size: 11px; display: flex; gap: 8px; align-items: center; }
+  .day-score-badge { padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+  .day-bar { height: 18px; border-radius: 4px; display: flex; overflow: hidden; gap: 1px; }
+  .day-seg { height: 100%; min-width: 2px; }
+  .day-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .leg-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--muted); }
+  .leg-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* EXPORT */
+  .export-area { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .export-text { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'SF Mono','Courier New',monospace; font-size: 12px; color: var(--text); white-space: pre-wrap; max-height: 400px; overflow-y: auto; line-height: 1.5; }
+  .copy-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; margin-top: 10px; width: 100%; transition: all .15s; }
+  .copy-btn:hover { background: var(--accent); border-color: var(--accent); }
+  .copy-btn.copied { background: #14532d; border-color: #22c55e; color: #22c55e; }
+  .week-selector { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+  .week-nav { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .week-label-text { flex: 1; text-align: center; font-size: 12px; color: var(--muted); }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 8px; font-size: 13px; transition: transform .2s; z-index: 999; pointer-events: none; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* FOCUS TIMER OVERLAY */
+  .focus-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity .2s; }
+  .focus-overlay.hidden { display: none; }
+  .focus-accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .focus-cat-label { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .focus-cat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .focus-what-label { font-size: 16px; color: var(--muted); margin-bottom: 40px; max-width: 320px; text-align: center; line-height: 1.4; min-height: 24px; }
+  .focus-time-display { font-size: 88px; font-weight: 800; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin-bottom: 10px; transition: color .3s; }
+  .focus-state-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 32px; height: 16px; }
+  .focus-block-wrap { width: 280px; margin-bottom: 10px; }
+  .focus-block-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .focus-block-fill { height: 100%; border-radius: 2px; transition: width .5s linear; }
+  .focus-block-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 5px; }
+  .focus-controls { display: flex; gap: 12px; margin-top: 40px; }
+  .focus-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .focus-btn:hover { background: var(--surface2); border-color: var(--muted); }
+  .focus-btn.danger { border-color: #ef444466; color: #ef4444; }
+  .focus-btn.danger:hover { background: #7f1d1d33; }
+  .focus-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .focus-btn.primary:hover { background: #4a4fe0; }
+
+  /* BREAK screen */
+  .break-screen { display: flex; flex-direction: column; align-items: center; }
+  .break-screen.hidden { display: none; }
+  .break-icon-big { font-size: 52px; margin-bottom: 16px; }
+  .break-title-txt { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .break-countdown { font-size: 72px; font-weight: 800; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; margin-bottom: 8px; color: #14b8a6; }
+  .break-sub { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.8; margin-bottom: 32px; }
+  .break-sub strong { color: var(--text); }
+
+  /* block complete flash */
+  @keyframes blockFlash { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .block-flash { animation: blockFlash .4s ease 3; }
+
+  /* GOAL SETUP OVERLAY */
+  .goal-overlay { position: fixed; inset: 0; background: rgba(10,10,15,.97); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .goal-overlay.hidden { display: none; }
+  .goal-box { max-width: 480px; width: 100%; }
+  .goal-box-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .goal-box-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+  .goal-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .goal-card-wide { grid-column: 1 / -1; max-width: 50%; margin: 0 auto; width: 100%; }
+  .goal-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all .15s; text-align: left; color: var(--text); }
+  .goal-card:hover { border-color: var(--muted); }
+  .goal-card.selected { border-color: var(--accent); background: #1a1a2e; }
+  .goal-card-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+  .goal-card-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+  .goal-card-desc { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
+  .goal-card-cats { font-size: 10px; color: var(--accent); font-weight: 600; }
+  .goal-card.selected .goal-card-icon::after { content: ' ✓'; font-size: 14px; }
+  .goal-hint { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+  .goal-hint span { color: var(--accent); }
+  .goal-continue { background: var(--accent); border: none; color: white; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; transition: all .15s; }
+  .goal-continue:hover { background: #4a4fe0; }
+  .goal-continue:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+
+  /* GOAL BADGE IN NAV */
+  .nav-goal-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 4px 10px; border-radius: 5px; cursor: pointer; transition: all .12s; }
+  .nav-goal-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ANALYSIS PAGE */
+  .analysis-period { display: flex; gap: 6px; margin-bottom: 14px; }
+  .an-period-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 6px; cursor: pointer; transition: all .12s; }
+  .an-period-btn.active { background: var(--surface2); border-color: var(--accent); color: var(--text); }
+  .insight-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .insight-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .insight-label-icon { font-size: 14px; }
+  .align-meter-wrap { margin-bottom: 10px; }
+  .align-meter-bar { height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden; margin: 6px 0; }
+  .align-meter-fill { height: 100%; border-radius: 5px; transition: width .5s; }
+  .align-meter-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .align-meter-val { font-size: 28px; font-weight: 800; }
+  .align-meter-target { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .diag-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .diag-row:last-child { border-bottom: none; }
+  .diag-key { color: var(--muted); font-size: 12px; }
+  .diag-val { font-weight: 600; }
+  .leak-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .leak-row:last-child { border-bottom: none; }
+  .leak-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .leak-info { flex: 1; }
+  .leak-name { font-size: 13px; font-weight: 500; }
+  .leak-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .leak-hrs { font-size: 12px; font-weight: 700; color: #ef4444; }
+  .working-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .working-row:last-child { border-bottom: none; }
+  .working-tag { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+  .action-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .action-item:last-child { border-bottom: none; }
+  .action-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .action-body { flex: 1; }
+  .action-text { font-size: 13px; font-weight: 500; margin-bottom: 3px; line-height: 1.4; }
+  .action-impact { font-size: 11px; color: #22c55e; font-weight: 600; }
+  .action-why { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .no-data-msg { text-align: center; padding: 30px; color: var(--muted); font-size: 12px; }
+  .copy-analysis-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; width: 100%; margin-top: 4px; transition: all .15s; }
+  .copy-analysis-btn:hover { color: var(--text); border-color: var(--muted); }
+  .copy-analysis-btn.copied { background: #14532d; border-color: #22c55e; color: #22c55e; }
+
+  @media(max-width:480px) {
+    .nav-title { display: none; }
+    .nav-tab { padding: 6px 7px; font-size: 11px; }
+    .score-number { font-size: 52px; }
+    .score-history { gap: 3px; }
+    .score-day-val { font-size: 13px; }
+    .goal-cards { grid-template-columns: 1fr 1fr; }
+    .goal-card { padding: 12px; }
+    .goal-card-icon { font-size: 22px; }
+    .goal-card-name { font-size: 13px; }
+  }
+
+  /* ── AUTH OVERLAY ── */
+  .auth-overlay { position: fixed; inset: 0; background: rgba(10,10,15,.97); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-overlay.hidden { display: none; }
+  .auth-box { max-width: 380px; width: 100%; }
+  .auth-logo { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; background: var(--surface); border-radius: 8px; padding: 3px; }
+  .auth-tab { flex: 1; background: none; border: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 8px; border-radius: 6px; cursor: pointer; transition: all .15s; }
+  .auth-tab.active { background: var(--surface2); color: var(--text); }
+  .auth-field { margin-bottom: 12px; }
+  .auth-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 5px; }
+  .auth-field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 11px 13px; outline: none; transition: border-color .12s; font-family: inherit; }
+  .auth-field input:focus { border-color: var(--accent); }
+  .auth-submit { background: var(--accent); border: none; color: white; padding: 13px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; transition: all .15s; margin-top: 4px; }
+  .auth-submit:hover { background: #4a4fe0; }
+  .auth-submit:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+  .auth-error { background: #7f1d1d33; border: 1px solid #ef444466; border-radius: 6px; color: #ef4444; font-size: 12px; padding: 8px 12px; margin-bottom: 12px; display: none; }
+  .auth-error.visible { display: block; }
+  .auth-divider { text-align: center; color: var(--muted); font-size: 11px; margin: 16px 0; }
+  .auth-guest { background: none; border: 1px solid var(--border); color: var(--muted); padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; width: 100%; transition: all .15s; }
+  .auth-guest:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── NAV USER ── */
+  .nav-user { display: flex; align-items: center; gap: 6px; }
+  .nav-user-email { font-size: 10px; color: var(--muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-logout-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 10px; padding: 3px 8px; border-radius: 5px; cursor: pointer; transition: all .12s; flex-shrink: 0; }
+  .nav-logout-btn:hover { color: #ef4444; border-color: #ef444466; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background .3s; }
+  .sync-dot.syncing { background: #eab308; animation: pulse 1s infinite; }
+  .sync-dot.synced  { background: #22c55e; }
+  .sync-dot.error   { background: #ef4444; }
+</style>
+</head>
+<body>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">🩸 Time Blood Test</div>
+    <div class="auth-sub">Track your time, own your results.<br>Sign in to sync across all your devices.</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab"        id="authTabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="authEmail" placeholder="you@email.com" autocomplete="email" />
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="auth-submit" id="authSubmit" onclick="handleAuth()">Sign In</button>
+    <div class="auth-divider">— or —</div>
+    <button class="auth-guest" onclick="continueAsGuest()">Continue without account (local only)</button>
+  </div>
+</div>
+
+<!-- FOCUS TIMER OVERLAY -->
+<div class="focus-overlay hidden" id="focusOverlay">
+  <div class="focus-accent-bar" id="focusAccentBar"></div>
+
+  <!-- FOCUSING / PAUSED -->
+  <div id="focusMain" style="display:flex;flex-direction:column;align-items:center;">
+    <div class="focus-cat-label">
+      <div class="focus-cat-dot" id="focusCatDot"></div>
+      <span id="focusCatName"></span>
+    </div>
+    <div class="focus-what-label" id="focusWhatLabel"></div>
+    <div class="focus-time-display" id="focusTimeDisplay">00:00</div>
+    <div class="focus-state-label" id="focusStateLabel">FOCUSING</div>
+    <div class="focus-block-wrap">
+      <div class="focus-block-track"><div class="focus-block-fill" id="focusBlockFill" style="width:0%"></div></div>
+      <div class="focus-block-label">
+        <span id="focusBlockLeft"></span>
+        <span id="focusBlockRight"></span>
+      </div>
+    </div>
+    <div class="focus-controls">
+      <button class="focus-btn" id="focusPauseBtn" onclick="pauseResumeTimer()">⏸ Pause</button>
+      <button class="focus-btn" onclick="startBreak()">☕ Break</button>
+      <button class="focus-btn danger" onclick="stopFocusTimer()">⏹ Stop</button>
+    </div>
+  </div>
+
+  <!-- BREAK -->
+  <div class="break-screen hidden" id="breakScreen">
+    <div class="break-icon-big">☕</div>
+    <div class="break-title-txt">Break Time</div>
+    <div class="break-countdown" id="breakCountdown">5:00</div>
+    <div class="break-sub">
+      <strong>Stand up.</strong> Stretch your back and neck.<br>
+      <strong>Drink water.</strong> Look at something 20m away.<br>
+      No phone. No social media.
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="focus-btn primary" onclick="endBreak()">↩ Back to Work</button>
+      <button class="focus-btn" onclick="skipBreak()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- GOAL SETUP OVERLAY -->
+<div class="goal-overlay hidden" id="goalOverlay">
+  <div class="goal-box">
+    <div class="goal-box-title">What are you optimising for?</div>
+    <div class="goal-box-sub">Your productivity score will be calibrated to your goals. Time spent on goal-aligned activities scores higher than time spent elsewhere.</div>
+    <div class="goal-cards" id="goalCards">
+      <button class="goal-card" data-goal="financial" onclick="toggleGoal('financial',this)">
+        <span class="goal-card-icon">💰</span>
+        <div class="goal-card-name">Financial</div>
+        <div class="goal-card-desc">Build wealth, income, and business. Entrepreneurship, skills, and career.</div>
+        <div class="goal-card-cats">Business → School → Training</div>
+      </button>
+      <button class="goal-card" data-goal="physical" onclick="toggleGoal('physical',this)">
+        <span class="goal-card-icon">💪</span>
+        <div class="goal-card-name">Physical</div>
+        <div class="goal-card-desc">Health, fitness, body composition, and athletic performance.</div>
+        <div class="goal-card-cats">Training → Recovery → School</div>
+      </button>
+      <button class="goal-card" data-goal="social" onclick="toggleGoal('social',this)">
+        <span class="goal-card-icon">🤝</span>
+        <div class="goal-card-name">Social</div>
+        <div class="goal-card-desc">Relationships, network, community, leadership, and communication.</div>
+        <div class="goal-card-cats">Social → Business → Training</div>
+      </button>
+      <button class="goal-card" data-goal="knowledge" onclick="toggleGoal('knowledge',this)">
+        <span class="goal-card-icon">🧠</span>
+        <div class="goal-card-name">Knowledge</div>
+        <div class="goal-card-desc">Learn, master skills, understand the world, and build expertise.</div>
+        <div class="goal-card-cats">School → Business → Training</div>
+      </button>
+      <button class="goal-card goal-card-wide" data-goal="creative" onclick="toggleGoal('creative',this)">
+        <span class="goal-card-icon">🎨</span>
+        <div class="goal-card-name">Creative</div>
+        <div class="goal-card-desc">Music, art, writing, content creation, design, filmmaking — building a creative body of work.</div>
+        <div class="goal-card-cats">School → Social → Business</div>
+      </button>
+    </div>
+    <div class="goal-hint">Select up to <span>2 goals</span>. Your primary goal (selected first) carries more weight.</div>
+    <button class="goal-continue" id="goalContinueBtn" onclick="saveGoals()" disabled>Select a goal to continue →</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-title">🩸 Time Blood Test</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('log',this)">Log</button>
+    <button class="nav-tab" onclick="showView('dash',this)">Dash</button>
+    <button class="nav-tab" onclick="showView('week',this)">7-Day</button>
+    <button class="nav-tab" onclick="showView('analysis',this)">Analysis</button>
+    <button class="nav-goal-btn" id="goalNavBtn" onclick="showGoalSetup()" title="Change goals">🎯</button>
+    <div class="nav-user" id="navUser" style="display:none">
+      <div class="sync-dot" id="syncDot" title="Sync status"></div>
+      <div class="nav-user-email" id="navUserEmail"></div>
+      <button class="nav-logout-btn" onclick="signOut()">Out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- LOG -->
+<div id="view-log" class="view active">
+  <div class="log-header">
+    <h2>Quick Log</h2>
+    <button class="timer-btn" id="timerBtn" onclick="toggleTimer()">▶ Start Timer</button>
+  </div>
+
+  <div class="timer-running-display" id="timerDisplay">
+    <div class="timer-dot"></div>
+    <div class="timer-label">
+      <div id="timerCategory" style="font-weight:600;font-size:13px"></div>
+      <div id="timerStarted" style="font-size:11px;color:var(--muted)"></div>
+    </div>
+    <div class="timer-elapsed" id="timerElapsed">0:00</div>
+  </div>
+
+  <div class="log-form">
+    <div style="margin-bottom:10px">
+      <div class="input-label" style="margin-bottom:6px">Category</div>
+      <div class="cat-grid" id="catGrid"></div>
+    </div>
+
+    <div class="form-row">
+      <div class="input-wrap">
+        <div class="input-label">What exactly</div>
+        <input type="text" id="whatInput" placeholder="e.g. cold outreach, chest & back, reading..." autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="form-row" style="flex-wrap:wrap;gap:10px;">
+      <div class="input-wrap" style="flex:0 0 auto;">
+        <div class="input-label">Start</div>
+        <input type="time" id="startTime" style="width:120px" />
+      </div>
+      <div class="input-wrap" style="flex:0 0 auto;">
+        <div class="input-label">End</div>
+        <input type="time" id="endTime" style="width:120px" />
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <div class="input-label" style="margin-bottom:6px">Productivity Rating — 1 = wasted time, 10 = peak focus &amp; output</div>
+      <div class="q-row" id="qRow"></div>
+      <div class="q-label-row"><span>Wasted</span><span>Peak</span></div>
+    </div>
+
+    <button class="submit-btn" onclick="submitEntry()">+ Log Entry</button>
+  </div>
+
+  <div class="section-title">Today's Entries</div>
+  <div class="entry-list" id="entryList"></div>
+</div>
+
+<!-- DASH -->
+<div id="view-dash" class="view">
+  <div class="section-title" style="margin-bottom:4px">Daily Productivity — <span id="dashDate" style="color:var(--text);text-transform:none;letter-spacing:0;font-size:12px"></span></div>
+
+  <div class="score-hero">
+    <div class="score-hero-label">Productivity Score</div>
+    <div>
+      <span class="score-number" id="scoreNum">—</span><span class="score-denom">/100</span>
+    </div>
+    <div class="score-grade" id="scoreGrade"></div>
+    <div class="score-bar-wrap"><div class="score-bar-fill" id="scoreBarFill" style="width:0%"></div></div>
+    <div class="score-formula" id="scoreFormula"></div>
+  </div>
+
+  <!-- SCORE CHART -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Score Over Time</div>
+      <div class="chart-periods">
+        <button class="period-btn active" data-period="7"   onclick="setChartPeriod(7,this)">7D</button>
+        <button class="period-btn"        data-period="30"  onclick="setChartPeriod(30,this)">30D</button>
+        <button class="period-btn"        data-period="90"  onclick="setChartPeriod(90,this)">90D</button>
+        <button class="period-btn"        data-period="365" onclick="setChartPeriod(365,this)">1Y</button>
+        <button class="period-btn"        data-period="0"   onclick="setChartPeriod(0,this)">All</button>
+      </div>
+    </div>
+    <div class="chart-svg-wrap" id="chartWrap">
+      <div class="chart-tooltip" id="chartTooltip">
+        <div class="tt-date" id="ttDate"></div>
+        <div class="tt-score" id="ttScore"></div>
+        <div id="ttGrade" style="font-size:10px;letter-spacing:.06em;margin-top:2px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="time-alloc">
+    <div class="alloc-title">Waking Day Breakdown (16 hrs)</div>
+    <div class="alloc-bar" id="allocBar"></div>
+    <div class="alloc-rows" id="allocRows"></div>
+  </div>
+
+  <div class="section-title">Category Breakdown</div>
+  <div class="cat-breakdown" id="catBreakdown"></div>
+</div>
+
+<!-- 7-DAY -->
+<div id="view-week" class="view">
+  <div class="section-title">Score History — Last 7 Days</div>
+  <div class="score-history" id="scoreHistory"></div>
+  <div class="section-title" style="margin-top:4px">Daily Breakdown</div>
+  <div class="week-grid" id="weekGrid"></div>
+</div>
+
+<!-- ANALYSIS -->
+<div id="view-analysis" class="view">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div class="section-title" style="margin-bottom:0">Diagnostic Report</div>
+    <div class="analysis-period">
+      <button class="an-period-btn active" data-days="7"  onclick="setAnalysisPeriod(7,this)">7D</button>
+      <button class="an-period-btn"        data-days="14" onclick="setAnalysisPeriod(14,this)">14D</button>
+      <button class="an-period-btn"        data-days="30" onclick="setAnalysisPeriod(30,this)">30D</button>
+    </div>
+  </div>
+  <div id="analysisContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// SUPABASE CONFIG — paste your project URL + anon key here
+// ══════════════════════════════════════════════════════════
+const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+let sb = null; // Supabase client (null if not configured or guest mode)
+let currentUser = null;
+
+function isSupabaseConfigured() {
+  return SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+}
+
+function initSupabaseClient() {
+  if (!isSupabaseConfigured()) return;
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch(e) { console.error('Supabase init failed:', e); }
+}
+
+// ── AUTH ──
+async function initAuth() {
+  initSupabaseClient();
+  if (!sb) { showAuthOverlay(); return; } // not configured → show overlay (guest only)
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await onSignedIn();
+  } else {
+    showAuthOverlay();
+  }
+
+  // Listen for auth changes (tab focus, token refresh, etc.)
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    if (session && !currentUser) {
+      currentUser = session.user;
+      await onSignedIn();
+    } else if (!session && currentUser) {
+      currentUser = null;
+      onSignedOut();
+    }
+  });
+}
+
+async function onSignedIn() {
+  hideAuthOverlay();
+  updateNavUser();
+  await loadFromSupabase();
+  renderAll();
+  if (!userGoals.length) showGoalSetup();
+}
+
+function onSignedOut() {
+  currentUser = null;
+  updateNavUser();
+  showAuthOverlay();
+}
+
+function updateNavUser() {
+  const navUser = document.getElementById('navUser');
+  const navEmail = document.getElementById('navUserEmail');
+  if (currentUser) {
+    navUser.style.display = 'flex';
+    navEmail.textContent = currentUser.email;
+  } else {
+    navUser.style.display = 'none';
+  }
+}
+
+function showAuthOverlay() {
+  document.getElementById('authOverlay').classList.remove('hidden');
+}
+function hideAuthOverlay() {
+  document.getElementById('authOverlay').classList.add('hidden');
+}
+
+function switchAuthTab(mode) {
+  const isSignIn = mode === 'signin';
+  document.getElementById('authTabSignIn').classList.toggle('active', isSignIn);
+  document.getElementById('authTabSignUp').classList.toggle('active', !isSignIn);
+  document.getElementById('authSubmit').textContent = isSignIn ? 'Sign In' : 'Create Account';
+  document.getElementById('authPassword').autocomplete = isSignIn ? 'current-password' : 'new-password';
+  clearAuthError();
+}
+
+function clearAuthError() {
+  const e = document.getElementById('authError');
+  e.textContent = '';
+  e.classList.remove('visible');
+}
+
+function showAuthError(msg) {
+  const e = document.getElementById('authError');
+  e.textContent = msg;
+  e.classList.add('visible');
+}
+
+async function handleAuth() {
+  if (!sb) { continueAsGuest(); return; }
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const isSignIn = document.getElementById('authTabSignIn').classList.contains('active');
+
+  if (!email || !password) { showAuthError('Enter email and password.'); return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+
+  const btn = document.getElementById('authSubmit');
+  btn.disabled = true;
+  btn.textContent = isSignIn ? 'Signing in…' : 'Creating account…';
+  clearAuthError();
+
+  const { data, error } = isSignIn
+    ? await sb.auth.signInWithPassword({ email, password })
+    : await sb.auth.signUp({ email, password });
+
+  btn.disabled = false;
+  btn.textContent = isSignIn ? 'Sign In' : 'Create Account';
+
+  if (error) {
+    showAuthError(error.message);
+    return;
+  }
+  if (!isSignIn && data.user && !data.session) {
+    // Email confirmation required
+    showAuthError('Check your email for a confirmation link, then sign in.');
+    switchAuthTab('signin');
+    return;
+  }
+  // onAuthStateChange will fire and call onSignedIn()
+}
+
+async function signOut() {
+  if (!sb) { onSignedOut(); return; }
+  await sb.auth.signOut();
+  // onAuthStateChange fires → onSignedOut()
+}
+
+function continueAsGuest() {
+  currentUser = null;
+  hideAuthOverlay();
+  updateNavUser();
+  load(); loadGoals(); renderAll();
+  if (!userGoals.length) showGoalSetup();
+}
+
+// ── SYNC ──
+function setSyncStatus(status) { // 'syncing' | 'synced' | 'error' | ''
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (status ? ' ' + status : '');
+  dot.title = { syncing:'Syncing…', synced:'Synced', error:'Sync error' }[status] || '';
+}
+
+async function loadFromSupabase() {
+  if (!sb || !currentUser) return;
+  setSyncStatus('syncing');
+  try {
+    // Load entries
+    const { data: remoteEntries, error: e1 } = await sb
+      .from('entries')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('date', { ascending: false });
+    if (e1) throw e1;
+
+    // Load goals
+    const { data: goalsRow, error: e2 } = await sb
+      .from('user_goals')
+      .select('goals')
+      .eq('user_id', currentUser.id)
+      .single();
+    if (e2 && e2.code !== 'PGRST116') throw e2; // PGRST116 = no rows
+
+    // Merge remote + any offline local entries (by id, remote wins on conflict)
+    const localEntries = (() => { try { return JSON.parse(localStorage.getItem('tbt_v2')||'[]'); } catch(e){ return []; } })();
+    const remoteIds = new Set((remoteEntries||[]).map(r => r.id));
+    const onlyLocal = localEntries.filter(e => !remoteIds.has(e.id));
+
+    // Map remote rows → local format
+    const mapped = (remoteEntries||[]).map(r => ({
+      id: r.id, date: r.date, startTime: r.start_time, endTime: r.end_time,
+      category: r.category, what: r.what, quality: r.quality, duration: r.duration
+    }));
+
+    entries = [...mapped, ...onlyLocal];
+    // Push any local-only entries to Supabase
+    for (const e of onlyLocal) { await syncEntry(e); }
+
+    if (goalsRow) {
+      userGoals = goalsRow.goals || [];
+    } else {
+      // Use local goals if no remote goals row yet
+      loadGoals();
+    }
+
+    save(); saveGoalData();
+    setSyncStatus('synced');
+    setTimeout(() => setSyncStatus(''), 3000);
+  } catch(err) {
+    console.error('loadFromSupabase error:', err);
+    // Fall back to localStorage
+    load(); loadGoals();
+    setSyncStatus('error');
+    setTimeout(() => setSyncStatus(''), 5000);
+  }
+}
+
+async function syncEntry(entry) {
+  if (!sb || !currentUser) return;
+  setSyncStatus('syncing');
+  const { error } = await sb.from('entries').upsert({
+    id:         entry.id,
+    user_id:    currentUser.id,
+    date:       entry.date,
+    start_time: entry.startTime,
+    end_time:   entry.endTime,
+    category:   entry.category,
+    what:       entry.what,
+    quality:    entry.quality,
+    duration:   entry.duration
+  });
+  if (error) { console.error('syncEntry error:', error); setSyncStatus('error'); setTimeout(()=>setSyncStatus(''),5000); }
+  else { setSyncStatus('synced'); setTimeout(()=>setSyncStatus(''),2000); }
+}
+
+async function deleteEntryFromDB(id) {
+  if (!sb || !currentUser) return;
+  setSyncStatus('syncing');
+  const { error } = await sb.from('entries').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { console.error('deleteEntry error:', error); setSyncStatus('error'); setTimeout(()=>setSyncStatus(''),5000); }
+  else { setSyncStatus('synced'); setTimeout(()=>setSyncStatus(''),2000); }
+}
+
+async function syncGoalsToSupabase() {
+  if (!sb || !currentUser) return;
+  setSyncStatus('syncing');
+  const { error } = await sb.from('user_goals').upsert({
+    user_id:    currentUser.id,
+    goals:      userGoals,
+    updated_at: new Date().toISOString()
+  });
+  if (error) { console.error('syncGoals error:', error); setSyncStatus('error'); setTimeout(()=>setSyncStatus(''),5000); }
+  else { setSyncStatus('synced'); setTimeout(()=>setSyncStatus(''),2000); }
+}
+
+// ══════════════════════════════════════════════════════════
+const CATEGORIES = ['Business','Training','School','Gaming','Consumption','Life Admin','Social','Recovery'];
+const CAT_COLORS = {
+  'Business':'#3b82f6','Training':'#f97316','School':'#a855f7',
+  'Gaming':'#ef4444','Consumption':'#f43f5e','Life Admin':'#64748b',
+  'Social':'#ec4899','Recovery':'#14b8a6'
+};
+// Time score multipliers: how much each category counts toward productive hours
+const CAT_MULT = {
+  'Business':1.0,'Training':1.0,'School':1.0,
+  'Life Admin':0.5,'Social':0.5,
+  'Recovery':0.0,'Gaming':0.0,'Consumption':0.0
+};
+// Static CAT_TYPE used as fallback / for allocation colouring
+const CAT_TYPE = {
+  'Business':'productive','Training':'productive','School':'productive',
+  'Life Admin':'neutral','Social':'neutral','Recovery':'neutral',
+  'Gaming':'unproductive','Consumption':'unproductive'
+};
+const WAKING_HOURS = 16;
+const TARGET_HOURS = 8;
+
+// ── GOAL SYSTEM ──
+// Category weights per goal (how much each category contributes to productive hours score)
+const GOAL_WEIGHTS = {
+  financial: {
+    'Business':1.0,'School':0.85,'Training':0.65,'Life Admin':0.45,
+    'Social':0.40,'Recovery':0.15,'Gaming':0.0,'Consumption':0.0
+  },
+  physical: {
+    'Training':1.0,'Recovery':0.75,'School':0.50,'Business':0.45,
+    'Life Admin':0.35,'Social':0.35,'Gaming':0.0,'Consumption':0.0
+  },
+  social: {
+    'Social':1.0,'Business':0.60,'Training':0.50,'School':0.45,
+    'Life Admin':0.40,'Recovery':0.25,'Gaming':0.05,'Consumption':0.0
+  },
+  knowledge: {
+    'School':1.0,'Business':0.80,'Training':0.50,'Life Admin':0.40,
+    'Social':0.40,'Recovery':0.20,'Gaming':0.05,'Consumption':0.0
+  },
+  creative: {
+    'School':0.90,'Business':0.65,'Social':0.55,'Training':0.45,
+    'Life Admin':0.40,'Recovery':0.25,'Gaming':0.10,'Consumption':0.05
+  }
+};
+const GOAL_META = {
+  financial: { icon:'💰', name:'Financial',  primary:['Business','School'] },
+  physical:  { icon:'💪', name:'Physical',   primary:['Training','Recovery'] },
+  social:    { icon:'🤝', name:'Social',     primary:['Social','Business'] },
+  knowledge: { icon:'🧠', name:'Knowledge',  primary:['School','Business'] },
+  creative:  { icon:'🎨', name:'Creative',   primary:['School','Social'] }
+};
+
+// Returns merged weight map based on active user goals
+// Primary goal (index 0) weight=1.0, secondary goal weight=0.5
+function getActiveWeights() {
+  const goals = userGoals;
+  if (!goals || !goals.length) return CAT_MULT;
+  const result = {};
+  CATEGORIES.forEach(cat => {
+    let num = 0, den = 0;
+    goals.forEach((gid, idx) => {
+      const gw = idx === 0 ? 1.0 : 0.5;
+      num += (GOAL_WEIGHTS[gid][cat] || 0) * gw;
+      den += gw;
+    });
+    result[cat] = num / den;
+  });
+  return result;
+}
+
+// Returns CAT_TYPE equivalent based on active goal weights
+function getDynType(cat) {
+  const w = getActiveWeights()[cat];
+  if (w >= 0.65) return 'productive';
+  if (w >= 0.30) return 'neutral';
+  return 'unproductive';
+}
+
+/*
+  SCORE FORMULA (out of 100):
+  ─────────────────────────────────────────────
+  TimeScore  (50 pts):
+    productiveHours = Σ(duration_mins × CAT_MULT) / 60
+    TimeScore = min(50, productiveHours / 8 × 50)
+
+  QualityScore (50 pts):
+    Only entries where CAT_MULT > 0 count
+    WeightedRating = Σ(duration × rating) / Σ(duration)
+    QualityScore = WeightedRating / 10 × 50
+
+  Total Score = round(TimeScore + QualityScore)
+  ─────────────────────────────────────────────
+  Example great day:
+    6h Business @ avg P9 + 1.5h Training @ P9 + 0.5h Life Admin @ P6
+    → productiveHours = 6+1.5+0.25 = 7.75h → TimeScore = 48.4
+    → WeightedRating = 8.7 → QualityScore = 43.5
+    → Score = 92 (ELITE)
+*/
+function calcScore(dayEntries) {
+  if (!dayEntries.length) return { score:0, timeScore:0, qualScore:0, productiveHours:0, weightedRating:0 };
+  const weights = getActiveWeights();
+  let prodMin=0, wRatingNum=0, wRatingDen=0;
+  dayEntries.forEach(e => {
+    const m = weights[e.category] || 0;
+    prodMin += e.duration * m;
+    if (m >= 0.3) { wRatingNum += e.duration * e.quality * m; wRatingDen += e.duration * m; }
+  });
+  const productiveHours = prodMin / 60;
+  const timeScore = Math.min(50, productiveHours / TARGET_HOURS * 50);
+  const weightedRating = wRatingDen > 0 ? wRatingNum / wRatingDen : 0;
+  const qualScore = weightedRating / 10 * 50;
+  return { score: Math.round(timeScore + qualScore), timeScore, qualScore, productiveHours, weightedRating };
+}
+
+function scoreGrade(s) {
+  if (s >= 90) return { label:'ELITE',    color:'#6366f1' };
+  if (s >= 75) return { label:'STRONG',   color:'#22c55e' };
+  if (s >= 60) return { label:'SOLID',    color:'#10b981' };
+  if (s >= 45) return { label:'MEDIOCRE', color:'#eab308' };
+  if (s >= 30) return { label:'WEAK',     color:'#f97316' };
+  return             { label:'WASTED',   color:'#ef4444' };
+}
+
+// ── STATE ──
+let entries = [], selectedCat = null, selectedQ = null;
+let timerRunning = false, timerStart = null, timerCat = null;
+let chartPeriod = 7;
+let userGoals = []; // e.g. ['financial'] or ['financial','physical']
+let _pendingGoals = []; // temp during goal setup UI
+let analysisPeriod = 7;
+
+function save() { localStorage.setItem('tbt_v2', JSON.stringify(entries)); }
+function load() { try { entries = JSON.parse(localStorage.getItem('tbt_v2')||'[]'); } catch(e){ entries=[]; } }
+function saveGoalData() { localStorage.setItem('tbt_goals', JSON.stringify(userGoals)); if(currentUser) syncGoalsToSupabase(); }
+function loadGoals() { try { userGoals = JSON.parse(localStorage.getItem('tbt_goals')||'[]'); } catch(e){ userGoals=[]; } }
+
+async function initApp() {
+  buildCatGrid();
+  buildQRow();
+  setDefaultTimes();
+  setInterval(() => { if(timerRunning) updateFocusDisplay(); }, 1000);
+
+  if (isSupabaseConfigured()) {
+    // Supabase is configured: check for existing session
+    await initAuth();
+    // updateGoalNavBtn is called inside onSignedIn / continueAsGuest
+    updateGoalNavBtn();
+  } else {
+    // No Supabase keys yet: run fully local + show auth overlay with guest-only option
+    load(); loadGoals(); renderAll(); updateGoalNavBtn();
+    if (!userGoals.length) showGoalSetup();
+    // Show auth overlay so user can see the "Continue without account" path
+    // (they can also paste keys later — just refresh)
+    showAuthOverlay();
+  }
+}
+
+initApp();
+
+function buildCatGrid() {
+  const g = document.getElementById('catGrid');
+  CATEGORIES.forEach(cat => {
+    const b = document.createElement('button');
+    b.className='cat-btn'; b.dataset.cat=cat; b.textContent=cat;
+    b.onclick=()=>selectCat(cat); g.appendChild(b);
+  });
+}
+
+function buildQRow() {
+  const r = document.getElementById('qRow');
+  for (let q=1;q<=10;q++) {
+    const b=document.createElement('button');
+    b.className=`q-btn q${q}`; b.dataset.q=q; b.textContent=q;
+    b.onclick=()=>selectQuality(q); r.appendChild(b);
+  }
+}
+
+function setDefaultTimes() {
+  const now=new Date();
+  document.getElementById('endTime').value=timeStr(now);
+  document.getElementById('startTime').value=timeStr(new Date(now-30*60000));
+}
+
+function timeStr(d) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+
+function selectCat(cat) {
+  selectedCat=cat;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('selected',b.dataset.cat===cat));
+}
+
+function selectQuality(q) {
+  selectedQ=q;
+  document.querySelectorAll('.q-btn').forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.q)===q));
+}
+
+// ── FOCUS TIMER STATE ──
+let timerPaused = false;
+let timerPauseStart = null;
+let timerPausedMs = 0;      // total ms spent paused (not counting break)
+let breakActive = false;
+let breakStart = null;
+let breakPausedAtMs = 0;    // timerPausedMs snapshot when break started
+const BREAK_SECS = 5 * 60;  // 5-minute break
+const BLOCK_SECS = 25 * 60; // 25-minute focus block
+let lastBlockNotified = 0;
+
+function focusElapsedSecs() {
+  if (!timerStart) return 0;
+  const paused = timerPaused
+    ? timerPausedMs + (Date.now() - timerPauseStart)
+    : timerPausedMs;
+  return Math.floor((Date.now() - timerStart - paused) / 1000);
+}
+
+function toggleTimer() {
+  if (!timerRunning) {
+    if (!selectedCat) { toast('Pick a category first'); return; }
+    timerRunning = true;
+    timerPaused = false;
+    timerPausedMs = 0;
+    timerPauseStart = null;
+    breakActive = false;
+    lastBlockNotified = 0;
+    timerStart = new Date();
+    timerCat = selectedCat;
+    document.getElementById('startTime').value = timeStr(timerStart);
+    openFocusOverlay();
+  } else {
+    closeFocusAndStop();
+  }
+}
+
+function openFocusOverlay() {
+  const color = CAT_COLORS[timerCat] || '#5b5ff5';
+  const what  = document.getElementById('whatInput').value.trim();
+  document.getElementById('focusCatDot').style.background = color;
+  document.getElementById('focusCatName').textContent = timerCat;
+  document.getElementById('focusWhatLabel').textContent = what || 'Focus session';
+  document.getElementById('focusAccentBar').style.background = color;
+  document.getElementById('focusBlockFill').style.background = color;
+  document.getElementById('focusTimeDisplay').style.color = color;
+  document.getElementById('focusMain').style.display = 'flex';
+  document.getElementById('breakScreen').classList.add('hidden');
+  document.getElementById('focusOverlay').classList.remove('hidden');
+  document.getElementById('timerBtn').textContent = '⏹ Stop Timer';
+  document.getElementById('timerBtn').classList.add('running');
+  updateFocusDisplay();
+}
+
+function updateFocusDisplay() {
+  if (!timerRunning) return;
+
+  if (breakActive) {
+    const breakElapsed = Math.floor((Date.now() - breakStart) / 1000);
+    const remaining = Math.max(0, BREAK_SECS - breakElapsed);
+    document.getElementById('breakCountdown').textContent =
+      `${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`;
+    if (remaining === 0) endBreak();
+    return;
+  }
+
+  const elapsed = focusElapsedSecs();
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+
+  // Main timer display
+  const display = elapsed >= 3600
+    ? `${Math.floor(elapsed/3600)}:${String(Math.floor((elapsed%3600)/60)).padStart(2,'0')}:${String(secs).padStart(2,'0')}`
+    : `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  document.getElementById('focusTimeDisplay').textContent = display;
+
+  // Block progress
+  const blockNum   = Math.floor(elapsed / BLOCK_SECS) + 1;
+  const blockProg  = ((elapsed % BLOCK_SECS) / BLOCK_SECS * 100).toFixed(1);
+  const blockLeft  = BLOCK_SECS - (elapsed % BLOCK_SECS);
+  document.getElementById('focusBlockFill').style.width = blockProg + '%';
+  document.getElementById('focusBlockLeft').textContent = `Block ${blockNum}`;
+  document.getElementById('focusBlockRight').textContent =
+    `${Math.floor(blockLeft/60)}m ${String(blockLeft%60).padStart(2,'0')}s left`;
+
+  // Block complete notification
+  if (blockNum - 1 > lastBlockNotified && elapsed > 5) {
+    lastBlockNotified = blockNum - 1;
+    flashBlockComplete(blockNum - 1);
+  }
+
+  // State label
+  const stateEl = document.getElementById('focusStateLabel');
+  if (timerPaused) {
+    stateEl.textContent = 'PAUSED';
+    stateEl.style.color = '#eab308';
+  } else {
+    stateEl.textContent = 'FOCUSING';
+    stateEl.style.color = 'var(--muted)';
+  }
+
+  // Sync the small log-view timer strip too
+  document.getElementById('timerElapsed').textContent =
+    `${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
+}
+
+function flashBlockComplete(n) {
+  const el = document.getElementById('focusTimeDisplay');
+  el.classList.remove('block-flash');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('block-flash');
+  // Brief overlay message
+  const stateEl = document.getElementById('focusStateLabel');
+  stateEl.textContent = `BLOCK ${n} DONE — Take a break?`;
+  stateEl.style.color = '#22c55e';
+  setTimeout(() => {
+    if (!timerPaused && !breakActive) {
+      stateEl.textContent = 'FOCUSING';
+      stateEl.style.color = 'var(--muted)';
+    }
+  }, 4000);
+}
+
+function pauseResumeTimer() {
+  if (!timerRunning || breakActive) return;
+  timerPaused = !timerPaused;
+  if (timerPaused) {
+    timerPauseStart = Date.now();
+    document.getElementById('focusPauseBtn').textContent = '▶ Resume';
+    document.getElementById('focusPauseBtn').classList.add('primary');
+  } else {
+    timerPausedMs += Date.now() - timerPauseStart;
+    timerPauseStart = null;
+    document.getElementById('focusPauseBtn').textContent = '⏸ Pause';
+    document.getElementById('focusPauseBtn').classList.remove('primary');
+  }
+  updateFocusDisplay();
+}
+
+function startBreak() {
+  if (!timerRunning || breakActive) return;
+  // Pause the work timer while on break
+  if (!timerPaused) {
+    timerPaused = true;
+    timerPauseStart = Date.now();
+  }
+  breakActive = true;
+  breakStart = Date.now();
+  document.getElementById('focusMain').style.display = 'none';
+  document.getElementById('breakScreen').classList.remove('hidden');
+}
+
+function endBreak() {
+  if (!breakActive) return;
+  // Add break duration to paused time so it doesn't count as focus time
+  timerPausedMs += Date.now() - timerPauseStart;
+  timerPauseStart = null;
+  timerPaused = false;
+  breakActive = false;
+  breakStart = null;
+  document.getElementById('focusPauseBtn').textContent = '⏸ Pause';
+  document.getElementById('focusPauseBtn').classList.remove('primary');
+  document.getElementById('breakScreen').classList.add('hidden');
+  document.getElementById('focusMain').style.display = 'flex';
+  document.getElementById('focusStateLabel').textContent = 'FOCUSING';
+  document.getElementById('focusStateLabel').style.color = 'var(--muted)';
+}
+
+function skipBreak() { endBreak(); }
+
+function stopFocusTimer() {
+  closeFocusAndStop();
+}
+
+function closeFocusAndStop() {
+  // If on break, end it cleanly first
+  if (breakActive) {
+    timerPausedMs += Date.now() - timerPauseStart;
+    timerPaused = false;
+    breakActive = false;
+  } else if (timerPaused) {
+    timerPausedMs += Date.now() - timerPauseStart;
+    timerPaused = false;
+  }
+  timerRunning = false;
+  const now = new Date();
+  document.getElementById('endTime').value = timeStr(now);
+  document.getElementById('startTime').value = timeStr(timerStart);
+  selectCat(timerCat);
+  document.getElementById('focusOverlay').classList.add('hidden');
+  document.getElementById('timerBtn').textContent = '▶ Start Timer';
+  document.getElementById('timerBtn').classList.remove('running');
+  document.getElementById('timerDisplay').classList.remove('visible');
+  // Reset focus state
+  timerPausedMs = 0; timerPauseStart = null; lastBlockNotified = 0;
+  document.getElementById('focusPauseBtn').textContent = '⏸ Pause';
+  document.getElementById('focusPauseBtn').classList.remove('primary');
+  document.getElementById('whatInput').focus();
+}
+
+function submitEntry() {
+  const what=document.getElementById('whatInput').value.trim();
+  const sv=document.getElementById('startTime').value;
+  const ev=document.getElementById('endTime').value;
+  if (!selectedCat){toast('Pick a category');return;}
+  if (!what){document.getElementById('whatInput').focus();toast('Add a description');return;}
+  if (!selectedQ){toast('Rate productivity 1–10');return;}
+  if (!sv||!ev){toast('Set start & end');return;}
+  const today=new Date().toISOString().split('T')[0];
+  const sd=new Date(`${today}T${sv}:00`);
+  let ed=new Date(`${today}T${ev}:00`);
+  if(ed<=sd) ed=new Date(ed.getTime()+86400000);
+  const dur=Math.round((ed-sd)/60000);
+  const newEntry = {id:Date.now().toString(),date:today,startTime:sv,endTime:ev,category:selectedCat,what,quality:selectedQ,duration:dur};
+  entries.push(newEntry);
+  save();
+  if (currentUser) syncEntry(newEntry);
+  document.getElementById('whatInput').value='';
+  selectedQ=null;
+  document.querySelectorAll('.q-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('startTime').value=ev;
+  document.getElementById('endTime').value=timeStr(new Date());
+  toast('Logged ✓');
+  renderAll();
+}
+
+function deleteEntry(id) { entries=entries.filter(e=>e.id!==id); save(); if(currentUser) deleteEntryFromDB(id); renderAll(); }
+
+function renderAll() { renderLog(); renderDash(); renderWeek(); renderAnalysis(); }
+
+// ── CHART ──
+function setChartPeriod(p, el) {
+  chartPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.period) === p));
+  renderScoreChart();
+}
+
+function renderScoreChart() {
+  const wrap = document.getElementById('chartWrap');
+  // Build date range
+  const today = new Date(); today.setHours(23,59,59,999);
+  let oldest;
+  if (chartPeriod === 0) {
+    // all time: find earliest entry date
+    const dates = entries.map(e => e.date).sort();
+    oldest = dates.length ? new Date(dates[0] + 'T00:00:00') : new Date();
+  } else {
+    oldest = new Date(today);
+    oldest.setDate(oldest.getDate() - (chartPeriod - 1));
+    oldest.setHours(0,0,0,0);
+  }
+
+  // Build array of {date, score} for every day in range
+  const msPerDay = 86400000;
+  const numDays = Math.round((today - oldest) / msPerDay) + 1;
+  const dayData = [];
+  for (let i = 0; i < numDays; i++) {
+    const d = new Date(oldest.getTime() + i * msPerDay);
+    const ds = d.toISOString().split('T')[0];
+    const de = entries.filter(e => e.date === ds);
+    const { score } = calcScore(de);
+    dayData.push({ date: ds, score: de.length ? score : null, d });
+  }
+
+  const hasData = dayData.some(x => x.score !== null);
+  if (!hasData) {
+    wrap.innerHTML = '<div class="chart-empty">No data yet — start logging to see your score trend.</div>';
+    return;
+  }
+
+  // SVG dimensions (logical units, viewBox makes it responsive)
+  const W = 560, H = 160;
+  const pL = 38, pR = 10, pT = 14, pB = 30;
+  const cW = W - pL - pR; // chart width
+  const cH = H - pT - pB; // chart height
+
+  function xPos(i)   { return pL + (i / Math.max(1, numDays - 1)) * cW; }
+  function yPos(s)   { return pT + (1 - s / 100) * cH; }
+
+  // Grade zone bands
+  const bands = [
+    { min:90, max:100, color:'#6366f1', opacity:.07 },
+    { min:75, max:90,  color:'#22c55e', opacity:.06 },
+    { min:60, max:75,  color:'#10b981', opacity:.05 },
+    { min:45, max:60,  color:'#eab308', opacity:.05 },
+    { min:30, max:45,  color:'#f97316', opacity:.04 },
+    { min:0,  max:30,  color:'#ef4444', opacity:.04 },
+  ];
+  const bandsSVG = bands.map(b =>
+    `<rect x="${pL}" y="${yPos(b.max)}" width="${cW}" height="${yPos(b.min)-yPos(b.max)}" fill="${b.color}" opacity="${b.opacity}" />`
+  ).join('');
+
+  // Reference lines at grade boundaries
+  const refLines = [90,75,60,45,30].map(v =>
+    `<line x1="${pL}" y1="${yPos(v)}" x2="${pL+cW}" y2="${yPos(v)}" stroke="#2a2a3a" stroke-width="1" />`
+  ).join('');
+
+  // Y-axis labels
+  const yLabels = [0,30,45,60,75,90,100].map(v =>
+    `<text x="${pL-6}" y="${yPos(v)+4}" text-anchor="end" font-size="9" fill="#6b6b80">${v}</text>`
+  ).join('');
+
+  // X-axis labels — adaptive density
+  const labelEvery = numDays <= 7 ? 1 : numDays <= 14 ? 2 : numDays <= 31 ? 5 : numDays <= 92 ? 14 : 30;
+  const xLabels = dayData.filter((_,i) => i % labelEvery === 0 || i === numDays-1).map(({d, date}, _, arr) => {
+    const i = dayData.findIndex(x => x.date === date);
+    const lbl = numDays <= 14
+      ? d.toLocaleDateString('en-AU', {weekday:'short'})
+      : numDays <= 92
+        ? d.toLocaleDateString('en-AU', {day:'numeric', month:'short'})
+        : d.toLocaleDateString('en-AU', {month:'short', year:'2-digit'});
+    return `<text x="${xPos(i)}" y="${H-6}" text-anchor="middle" font-size="9" fill="#6b6b80">${lbl}</text>`;
+  }).join('');
+
+  // Build line segments (gap on null days)
+  // Collect consecutive non-null runs
+  let segments = [], current = [];
+  dayData.forEach((pt, i) => {
+    if (pt.score !== null) {
+      current.push({ i, score: pt.score, date: pt.date });
+    } else {
+      if (current.length) { segments.push(current); current = []; }
+    }
+  });
+  if (current.length) segments.push(current);
+
+  // For each segment: area fill + line
+  const segSVG = segments.map(seg => {
+    if (seg.length === 0) return '';
+    if (seg.length === 1) {
+      const pt = seg[0];
+      const g = scoreGrade(pt.score);
+      return `<circle cx="${xPos(pt.i)}" cy="${yPos(pt.score)}" r="3.5" fill="${g.color}" />`;
+    }
+    // Line path
+    const pts = seg.map(pt => `${xPos(pt.i)},${yPos(pt.score)}`).join(' ');
+    const linePath = 'M ' + seg.map(pt => `${xPos(pt.i)} ${yPos(pt.score)}`).join(' L ');
+    // Area path (close to bottom)
+    const areaPath = linePath
+      + ` L ${xPos(seg[seg.length-1].i)} ${yPos(0)}`
+      + ` L ${xPos(seg[0].i)} ${yPos(0)} Z`;
+
+    // Gradient id per segment
+    const gid = 'g_' + seg[0].i;
+    const avgScore = seg.reduce((a,b) => a + b.score, 0) / seg.length;
+    const lineColor = scoreGrade(Math.round(avgScore)).color;
+
+    return `<defs>
+      <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${lineColor}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${lineColor}" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#${gid})" />
+    <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+    ${seg.map(pt => {
+      const gc = scoreGrade(pt.score).color;
+      return `<circle cx="${xPos(pt.i)}" cy="${yPos(pt.score)}" r="${numDays > 60 ? 0 : numDays > 20 ? 2 : 3}" fill="${gc}" class="chart-dot" data-i="${pt.i}" />`;
+    }).join('')}`;
+  }).join('');
+
+  // Invisible hover targets for tooltip
+  const hoverRects = dayData.map((pt, i) => {
+    if (pt.score === null) return '';
+    const slotW = Math.max(8, cW / numDays);
+    return `<rect x="${xPos(i) - slotW/2}" y="${pT}" width="${slotW}" height="${cH}" fill="transparent"
+      onmouseenter="showChartTip(event,${i})" ontouchstart="showChartTip(event,${i})"
+      onmouseleave="hideChartTip()" />`;
+  }).join('');
+
+  // Crosshair line (hidden by default)
+  const crosshair = `<line id="chartCrosshair" x1="0" y1="${pT}" x2="0" y2="${pT+cH}" stroke="#2a2a3a" stroke-width="1" opacity="0" />`;
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+    ${bandsSVG}
+    ${refLines}
+    ${yLabels}
+    ${xLabels}
+    ${segSVG}
+    ${crosshair}
+    ${hoverRects}
+  </svg>
+  <div class="chart-tooltip" id="chartTooltip">
+    <div class="tt-date" id="ttDate"></div>
+    <div class="tt-score" id="ttScore"></div>
+    <div id="ttGrade" style="font-size:10px;letter-spacing:.06em;margin-top:2px"></div>
+  </div>`;
+  wrap.innerHTML = svg;
+
+  // Store chart data for tooltip
+  wrap._chartData = { dayData, xPos, yPos, W, numDays };
+}
+
+function showChartTip(event, idx) {
+  const wrap = document.getElementById('chartWrap');
+  if (!wrap._chartData) return;
+  const { dayData, xPos, yPos, W } = wrap._chartData;
+  const pt = dayData[idx];
+  if (!pt || pt.score === null) return;
+
+  const tip = wrap.querySelector('#chartTooltip') || document.getElementById('chartTooltip');
+  const dateEl = wrap.querySelector('#ttDate') || document.getElementById('ttDate');
+  const scoreEl = wrap.querySelector('#ttScore') || document.getElementById('ttScore');
+  const gradeEl = wrap.querySelector('#ttGrade') || document.getElementById('ttGrade');
+
+  const d = new Date(pt.date + 'T12:00:00');
+  const label = d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' });
+  const g = scoreGrade(pt.score);
+
+  if (dateEl) dateEl.textContent = label;
+  if (scoreEl) { scoreEl.textContent = pt.score + '/100'; scoreEl.style.color = g.color; }
+  if (gradeEl) { gradeEl.textContent = g.label; gradeEl.style.color = g.color; }
+
+  // Position crosshair
+  const svgEl = wrap.querySelector('svg');
+  const svgRect = svgEl ? svgEl.getBoundingClientRect() : null;
+  if (svgRect) {
+    const svgScale = svgRect.width / W;
+    const xPx = xPos(idx) * svgScale;
+    const cl = wrap.querySelector('#chartCrosshair');
+    if (cl) { cl.setAttribute('x1', xPos(idx)); cl.setAttribute('x2', xPos(idx)); cl.setAttribute('opacity','1'); }
+
+    if (tip) {
+      const tipLeft = Math.min(xPx + 8, svgRect.width - 130);
+      tip.style.left = tipLeft + 'px';
+      tip.style.top = '10px';
+      tip.style.opacity = '1';
+    }
+  }
+}
+
+function hideChartTip() {
+  const wrap = document.getElementById('chartWrap');
+  const tip = wrap ? wrap.querySelector('#chartTooltip') : null;
+  if (tip) tip.style.opacity = '0';
+  const cl = wrap ? wrap.querySelector('#chartCrosshair') : null;
+  if (cl) cl.setAttribute('opacity', '0');
+}
+
+// ── LOG ──
+function renderLog() {
+  const today=new Date().toISOString().split('T')[0];
+  const te=entries.filter(e=>e.date===today).sort((a,b)=>b.startTime.localeCompare(a.startTime));
+  const list=document.getElementById('entryList');
+  if (!te.length){list.innerHTML='<div class="empty"><div class="empty-icon">🩸</div><div>No entries today.<br>Start logging.</div></div>';return;}
+  list.innerHTML=te.map(e=>`
+    <div class="entry-card">
+      <div class="entry-dot" style="background:${CAT_COLORS[e.category]}"></div>
+      <div class="entry-info">
+        <div class="entry-what">${esc(e.what)}</div>
+        <div class="entry-meta">${e.category} · ${e.startTime}–${e.endTime}</div>
+      </div>
+      <div class="entry-right">
+        <div class="entry-dur">${fmtDur(e.duration)}</div>
+        <div class="entry-q">P${e.quality}/10</div>
+      </div>
+      <button class="entry-del" onclick="deleteEntry('${e.id}')">×</button>
+    </div>`).join('');
+}
+
+// ── DASH ──
+function renderDash() {
+  const today=new Date().toISOString().split('T')[0];
+  const te=entries.filter(e=>e.date===today);
+  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
+
+  // Score
+  const {score,timeScore,qualScore,productiveHours,weightedRating}=calcScore(te);
+  const g=scoreGrade(score);
+  document.getElementById('scoreNum').textContent=te.length?score:'—';
+  document.getElementById('scoreNum').style.color=g.color;
+  document.getElementById('scoreGrade').textContent=te.length?g.label:'';
+  document.getElementById('scoreGrade').style.color=g.color;
+  document.getElementById('scoreBarFill').style.width=(te.length?score:0)+'%';
+  document.getElementById('scoreBarFill').style.background=g.color;
+  document.getElementById('scoreFormula').innerHTML=te.length
+    ?`Time <strong>${timeScore.toFixed(0)}/50</strong> + Quality <strong>${qualScore.toFixed(0)}/50</strong> &nbsp;·&nbsp; ${productiveHours.toFixed(1)}h productive &nbsp;·&nbsp; avg P${weightedRating>0?weightedRating.toFixed(1):'—'}/10`
+    :'Start logging to see your score';
+
+  // Allocation
+  const catMin={};
+  let totalLogged=0;
+  te.forEach(e=>{catMin[e.category]=(catMin[e.category]||0)+e.duration;totalLogged+=e.duration;});
+  const wakingMin=WAKING_HOURS*60;
+  const groups={
+    productive:  {label:'Productive',  color:'#22c55e',minutes:0},
+    neutral:     {label:'Neutral',     color:'#64748b',minutes:0},
+    unproductive:{label:'Unproductive',color:'#ef4444',minutes:0},
+    untracked:   {label:'Untracked',   color:'#2a2a3a',minutes:Math.max(0,wakingMin-totalLogged)}
+  };
+  Object.entries(catMin).forEach(([cat,min])=>{groups[getDynType(cat)].minutes+=min;});
+
+  document.getElementById('allocBar').innerHTML=Object.values(groups).map(g2=>
+    `<div class="alloc-seg" style="width:${Math.max(0,g2.minutes/wakingMin*100).toFixed(1)}%;background:${g2.color}"></div>`
+  ).join('');
+
+  document.getElementById('allocRows').innerHTML=Object.values(groups).map(g2=>{
+    const pct=(g2.minutes/wakingMin*100).toFixed(0);
+    return `<div class="alloc-row">
+      <div class="alloc-dot" style="background:${g2.color}"></div>
+      <div class="alloc-name">${g2.label}</div>
+      <div class="alloc-hrs">${(g2.minutes/60).toFixed(1)}h</div>
+      <div class="alloc-pct">${pct}%</div>
+      <div class="alloc-mini-bar"><div class="alloc-mini-fill" style="width:${pct}%;background:${g2.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Category breakdown
+  const sorted=Object.entries(catMin).sort((a,b)=>b[1]-a[1]);
+  const maxMin=sorted[0]?.[1]||1;
+  renderScoreChart();
+
+  document.getElementById('catBreakdown').innerHTML=sorted.length?sorted.map(([cat,min])=>{
+    const hrs=(min/60).toFixed(1);
+    const pct=Math.round(min/wakingMin*100);
+    const ents=te.filter(e=>e.category===cat);
+    const avgQ=ents.length?(ents.reduce((s,e)=>s+e.quality,0)/ents.length).toFixed(1):'–';
+    const t=getDynType(cat);
+    const tc=t==='productive'?'tag-productive':t==='unproductive'?'tag-unproductive':'tag-neutral';
+    const tl=t==='productive'?'Goal-aligned':t==='unproductive'?'Off-goal':'Neutral';
+    return `<div class="cat-row">
+      <div class="cat-row-header">
+        <div class="cat-row-dot" style="background:${CAT_COLORS[cat]}"></div>
+        <div class="cat-name">${cat}</div>
+        <span class="cat-tag ${tc}">${tl}</span>
+        <div class="cat-hours">${hrs}h</div>
+      </div>
+      <div class="cat-stats"><span>${pct}% of day</span><span>Avg P: ${avgQ}/10</span><span>${ents.length} ${ents.length===1?'entry':'entries'}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(min/maxMin*100)}%;background:${CAT_COLORS[cat]}"></div></div>
+    </div>`;
+  }).join(''):'<div class="empty">No data for today yet</div>';
+}
+
+// ── WEEK ──
+function renderWeek() {
+  const today=new Date().toISOString().split('T')[0];
+  const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toISOString().split('T')[0];});
+
+  document.getElementById('scoreHistory').innerHTML=days.map(date=>{
+    const de=entries.filter(e=>e.date===date);
+    const {score}=calcScore(de);
+    const g=scoreGrade(score);
+    const lbl=new Date(date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short'});
+    const isT=date===today;
+    return `<div class="score-day" style="${isT?'border-color:var(--accent)':''}">
+      <div class="score-day-label">${lbl}</div>
+      <div class="score-day-val" style="color:${de.length?g.color:'var(--muted)'}">${de.length?score:'–'}</div>
+      <div class="score-day-bar-wrap"><div class="score-day-bar-fill" style="width:${score}%;background:${g.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('weekGrid').innerHTML=days.map(date=>{
+    const de=entries.filter(e=>e.date===date);
+    const {score}=calcScore(de);
+    const g=scoreGrade(score);
+    const catMin={};let totalMin=0;
+    de.forEach(e=>{catMin[e.category]=(catMin[e.category]||0)+e.duration;totalMin+=e.duration;});
+    const d=new Date(date+'T12:00:00');
+    const dayName=d.toLocaleDateString('en-AU',{weekday:'short',month:'short',day:'numeric'});
+    const isT=date===today;
+    const segs=Object.entries(catMin).sort((a,b)=>b[1]-a[1]).map(([cat,min])=>
+      `<div class="day-seg" style="width:${(min/WAKING_HOURS/60*100).toFixed(1)}%;background:${CAT_COLORS[cat]}" title="${cat}: ${fmtDur(min)}"></div>`
+    ).join('');
+    const legend=Object.entries(catMin).sort((a,b)=>b[1]-a[1]).map(([cat,min])=>
+      `<div class="leg-item"><div class="leg-dot" style="background:${CAT_COLORS[cat]}"></div>${cat} ${fmtDur(min)}</div>`
+    ).join('');
+    return `<div class="day-row" style="${isT?'border-color:var(--accent)':''}">
+      <div class="day-label">
+        ${isT?'● ':''}${dayName}
+        <div class="day-label-right">
+          ${fmtDur(totalMin)}
+          ${de.length?`<span class="day-score-badge" style="background:${g.color}22;color:${g.color}">${score}/100</span>`:''}
+        </div>
+      </div>
+      ${totalMin>0?`<div class="day-bar">${segs}</div><div class="day-legend">${legend}</div>`:'<div style="font-size:11px;color:var(--muted)">No entries</div>'}
+    </div>`;
+  }).join('');
+}
+
+// ── GOAL SETUP ──
+function showGoalSetup() {
+  _pendingGoals = [...userGoals];
+  // Restore card states to match current goals
+  document.querySelectorAll('.goal-card').forEach(c => {
+    c.classList.toggle('selected', _pendingGoals.includes(c.dataset.goal));
+  });
+  updateGoalOrderLabels();
+  document.getElementById('goalOverlay').classList.remove('hidden');
+  const btn = document.getElementById('goalContinueBtn');
+  btn.disabled = _pendingGoals.length === 0;
+  btn.textContent = _pendingGoals.length ? 'Save goals →' : 'Select a goal to continue →';
+}
+
+function toggleGoal(gid, el) {
+  const idx = _pendingGoals.indexOf(gid);
+  if (idx >= 0) {
+    _pendingGoals.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    if (_pendingGoals.length >= 2) {
+      // remove the oldest
+      const old = _pendingGoals.shift();
+      document.querySelector(`.goal-card[data-goal="${old}"]`).classList.remove('selected');
+    }
+    _pendingGoals.push(gid);
+    el.classList.add('selected');
+  }
+  updateGoalOrderLabels();
+  const btn = document.getElementById('goalContinueBtn');
+  btn.disabled = _pendingGoals.length === 0;
+  btn.textContent = _pendingGoals.length ? (_pendingGoals.length===1?'Continue →':'Save 2 goals →') : 'Select a goal to continue →';
+}
+
+function updateGoalOrderLabels() {
+  document.querySelectorAll('.goal-card').forEach(c => {
+    const gid = c.dataset.goal;
+    const idx = _pendingGoals.indexOf(gid);
+    let icon = c.querySelector('.goal-card-icon');
+    const meta = GOAL_META[gid];
+    if (idx === 0) icon.textContent = meta.icon + ' ①';
+    else if (idx === 1) icon.textContent = meta.icon + ' ②';
+    else icon.textContent = meta.icon;
+  });
+}
+
+function saveGoals() {
+  if (!_pendingGoals.length) return;
+  userGoals = [..._pendingGoals];
+  saveGoalData();
+  document.getElementById('goalOverlay').classList.add('hidden');
+  updateGoalNavBtn();
+  renderAll();
+}
+
+function updateGoalNavBtn() {
+  const btn = document.getElementById('goalNavBtn');
+  if (!btn) return;
+  if (userGoals.length) {
+    btn.textContent = userGoals.map(g => GOAL_META[g].icon).join('');
+    btn.title = 'Goals: ' + userGoals.map(g => GOAL_META[g].name).join(' + ') + ' — click to change';
+  } else {
+    btn.textContent = '🎯';
+    btn.title = 'Set your goals';
+  }
+}
+
+// ── ANALYSIS ──
+function setAnalysisPeriod(days, el) {
+  analysisPeriod = days;
+  document.querySelectorAll('.an-period-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days) === days));
+  renderAnalysis();
+}
+
+function renderAnalysis() {
+  const el = document.getElementById('analysisContent');
+  if (!el) return;
+
+  const weights = getActiveWeights();
+  const today = new Date().toISOString().split('T')[0];
+
+  // Build period entries
+  const days = Array.from({length: analysisPeriod}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (analysisPeriod - 1) + i);
+    return d.toISOString().split('T')[0];
+  });
+  const prevDays = Array.from({length: analysisPeriod}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (analysisPeriod * 2 - 1) + i);
+    return d.toISOString().split('T')[0];
+  });
+
+  const periodEntries = entries.filter(e => days.includes(e.date));
+  const prevEntries   = entries.filter(e => prevDays.includes(e.date));
+  const daysLogged    = [...new Set(periodEntries.map(e => e.date))].length;
+
+  if (!periodEntries.length) {
+    el.innerHTML = `<div class="no-data-msg">No data for this period yet.<br>Log some time blocks to see your diagnostic.</div>`;
+    return;
+  }
+
+  // ── DAILY SCORES ──
+  const dayScores = days.map(d => {
+    const de = entries.filter(e => e.date === d);
+    return de.length ? calcScore(de).score : null;
+  }).filter(s => s !== null);
+  const prevDayScores = prevDays.map(d => {
+    const de = entries.filter(e => e.date === d);
+    return de.length ? calcScore(de).score : null;
+  }).filter(s => s !== null);
+  const avgScore = dayScores.length ? Math.round(dayScores.reduce((a,b)=>a+b,0)/dayScores.length) : 0;
+  const prevAvgScore = prevDayScores.length ? Math.round(prevDayScores.reduce((a,b)=>a+b,0)/prevDayScores.length) : null;
+  const scoreTrend = prevAvgScore !== null ? avgScore - prevAvgScore : null;
+
+  const bestDay = days.reduce((best, d) => {
+    const de = entries.filter(e => e.date === d);
+    if (!de.length) return best;
+    const s = calcScore(de).score;
+    return (!best || s > best.score) ? { date: d, score: s } : best;
+  }, null);
+  const worstDay = days.reduce((worst, d) => {
+    const de = entries.filter(e => e.date === d);
+    if (!de.length) return worst;
+    const s = calcScore(de).score;
+    return (!worst || s < worst.score) ? { date: d, score: s } : worst;
+  }, null);
+
+  // ── GOAL ALIGNMENT ──
+  const totalLoggedMin = periodEntries.reduce((s,e)=>s+e.duration,0);
+  const goalAlignedMin = periodEntries.reduce((s,e)=>s+e.duration*(weights[e.category]>=0.65?1:0),0);
+  const goalAlignPct   = totalLoggedMin > 0 ? Math.round(goalAlignedMin/totalLoggedMin*100) : 0;
+  const wakingMinPeriod = daysLogged * WAKING_HOURS * 60;
+  const goalAlignOfWaking = wakingMinPeriod > 0 ? Math.round(goalAlignedMin/wakingMinPeriod*100) : 0;
+
+  // ── CATEGORY STATS ──
+  const catMin = {}, catQ = {};
+  CATEGORIES.forEach(c => { catMin[c]=0; catQ[c]=[]; });
+  periodEntries.forEach(e => { catMin[e.category]+=e.duration; catQ[e.category].push(e.quality); });
+  const avgDailyMin = {};
+  CATEGORIES.forEach(c => { avgDailyMin[c] = daysLogged > 0 ? catMin[c]/daysLogged : 0; });
+
+  // ── TIME LEAKS (low-weight categories with significant time) ──
+  const leaks = CATEGORIES
+    .filter(c => weights[c] < 0.3 && avgDailyMin[c] > 20)
+    .map(c => ({ cat: c, hpd: avgDailyMin[c]/60, totalMin: catMin[c] }))
+    .sort((a,b) => b.hpd - a.hpd);
+
+  const untrackedPerDay = daysLogged > 0
+    ? Math.max(0, WAKING_HOURS - (totalLoggedMin/daysLogged/60))
+    : WAKING_HOURS;
+
+  // ── QUALITY ANALYSIS ──
+  const prodEntries = periodEntries.filter(e => weights[e.category] >= 0.3);
+  const avgQuality = prodEntries.length
+    ? prodEntries.reduce((s,e)=>s+e.quality,0)/prodEntries.length
+    : 0;
+  const lowQualProd = prodEntries.filter(e => e.quality <= 4);
+  const highQualProd = prodEntries.filter(e => e.quality >= 8);
+
+  // ── BEST TIME OF DAY ──
+  const hourBuckets = {};
+  periodEntries.forEach(e => {
+    const h = parseInt(e.startTime.split(':')[0]);
+    if (!hourBuckets[h]) hourBuckets[h] = [];
+    hourBuckets[h].push(e.quality);
+  });
+  const hourAvgs = Object.entries(hourBuckets)
+    .filter(([,qs]) => qs.length >= 2)
+    .map(([h, qs]) => ({ h: parseInt(h), avg: qs.reduce((a,b)=>a+b,0)/qs.length, n: qs.length }))
+    .sort((a,b) => b.avg - a.avg);
+  const peakHour = hourAvgs[0];
+
+  // ── PRIMARY GOAL CATEGORY TIME ──
+  const primaryGoal = userGoals[0];
+  const primaryCats = primaryGoal ? GOAL_META[primaryGoal].primary : [];
+  const primaryMin = primaryCats.reduce((s,c) => s+(catMin[c]||0), 0);
+  const primaryHpd = daysLogged > 0 ? primaryMin/daysLogged/60 : 0;
+
+  // ── GENERATE ACTION ITEMS ──
+  const candidates = [];
+
+  // Action: Reduce biggest leak
+  if (leaks.length > 0) {
+    const l = leaks[0];
+    const savedMin = (l.hpd - 1) * 60 * daysLogged;
+    const projScore = avgScore + Math.round(savedMin * weights['Business'] / daysLogged / 60 / TARGET_HOURS * 50 * 0.7);
+    candidates.push({
+      priority: l.hpd > 2 ? 1 : 3,
+      text: `Cut ${l.cat} from ${l.hpd.toFixed(1)}h to max 1h/day`,
+      impact: `Reclaim ~${((l.hpd-1)*daysLogged).toFixed(0)}h this period for goal work`,
+      why: `${l.cat} has a weight of ${(weights[l.cat]*100).toFixed(0)}% toward your goals — it's your biggest time drain.`
+    });
+  }
+
+  // Action: Increase primary goal category time
+  if (primaryGoal && primaryHpd < 5) {
+    const targetHpd = 6;
+    candidates.push({
+      priority: primaryHpd < 3 ? 1 : 2,
+      text: `Push ${primaryCats[0]} to ${targetHpd}h/day (currently ${primaryHpd.toFixed(1)}h)`,
+      impact: `+${Math.round((targetHpd-primaryHpd)/TARGET_HOURS*50*0.8)} pts avg daily score`,
+      why: `${primaryCats[0]} is your highest-value category for ${GOAL_META[primaryGoal].name}. It's the fastest lever on your score.`
+    });
+  }
+
+  // Action: Log untracked time
+  if (untrackedPerDay > 4) {
+    candidates.push({
+      priority: 2,
+      text: `Log all your time — you have ${untrackedPerDay.toFixed(1)}h/day untracked`,
+      impact: 'Accurate data = accurate diagnosis. You\'re flying blind on 30%+ of your day.',
+      why: `${untrackedPerDay.toFixed(1)}h/day is invisible. It could be your biggest leak or your hidden asset.`
+    });
+  }
+
+  // Action: Fix low-quality productive sessions
+  if (lowQualProd.length > 2 && avgQuality < 6.5) {
+    const drag = (6.5 - avgQuality).toFixed(1);
+    candidates.push({
+      priority: 2,
+      text: `Improve session quality — avg is P${avgQuality.toFixed(1)}/10 on goal work`,
+      impact: `Bringing avg to P7.5 would add ~${Math.round(drag/10*50*0.6)}pts to daily score`,
+      why: `${lowQualProd.length} of your productive sessions were P1–4. Distraction, fatigue, or wrong environment.`
+    });
+  }
+
+  // Action: Protect peak hours
+  if (peakHour && primaryCats.length) {
+    const peakLabel = `${peakHour.h}:00–${peakHour.h+1}:00`;
+    const peakCatEntries = periodEntries.filter(e => {
+      const h = parseInt(e.startTime.split(':')[0]);
+      return h === peakHour.h && primaryCats.includes(e.category);
+    });
+    if (peakCatEntries.length < 2) {
+      candidates.push({
+        priority: 3,
+        text: `Block ${peakLabel} exclusively for ${primaryCats[0]}`,
+        impact: `Your avg quality at ${peakLabel} is P${peakHour.avg.toFixed(1)}/10 — your peak window`,
+        why: `You're not consistently using your highest-quality hours for your most important work.`
+      });
+    }
+  }
+
+  // Action: Add recovery if training-heavy
+  if ((catMin['Training']||0) > 0 && (catMin['Recovery']||0) < 30*daysLogged) {
+    candidates.push({
+      priority: 3,
+      text: `Log Recovery time — you\'re training but not tracking rest`,
+      impact: 'Sleep and recovery directly determine next-day quality ratings.',
+      why: `Recovery is visible in your score for Physical goals (weight: ${(weights['Recovery']*100).toFixed(0)}%). Log it.`
+    });
+  }
+
+  // Sort and take top 3
+  candidates.sort((a,b) => a.priority - b.priority);
+  const actions = candidates.slice(0, 3);
+
+  // ── RENDER ──
+  const trendStr = scoreTrend === null ? '' : scoreTrend > 0
+    ? `<span style="color:#22c55e">↑${scoreTrend} vs prev period</span>`
+    : scoreTrend < 0
+      ? `<span style="color:#ef4444">↓${Math.abs(scoreTrend)} vs prev period</span>`
+      : `<span style="color:var(--muted)">= same as prev period</span>`;
+
+  const goalLine = userGoals.length
+    ? userGoals.map(g=>GOAL_META[g].icon+' '+GOAL_META[g].name).join(' + ')
+    : 'No goals set';
+
+  const alignColor = goalAlignPct >= 60 ? '#22c55e' : goalAlignPct >= 35 ? '#eab308' : '#ef4444';
+  const alignMsg = goalAlignPct >= 60 ? 'Strong alignment' : goalAlignPct >= 35 ? 'Room to improve' : 'Low alignment — most time off-goal';
+
+  const gradeColors = { ELITE:'#6366f1',STRONG:'#22c55e',SOLID:'#10b981',MEDIOCRE:'#eab308',WEAK:'#f97316',WASTED:'#ef4444' };
+
+  el.innerHTML = `
+    <!-- GOAL ALIGNMENT -->
+    <div class="insight-card">
+      <div class="insight-label"><span class="insight-label-icon">🎯</span> Goal Alignment — ${goalLine}</div>
+      <div class="align-meter-val" style="color:${alignColor}">${goalAlignPct}%</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${alignMsg} · ${goalAlignOfWaking}% of waking day</div>
+      <div class="align-meter-bar" style="margin:8px 0 4px"><div class="align-meter-fill" style="width:${goalAlignPct}%;background:${alignColor}"></div></div>
+      <div class="align-meter-row"><span>0%</span><span style="color:${alignColor}">Target: 60%+</span><span>100%</span></div>
+    </div>
+
+    <!-- WEEK DIAGNOSIS -->
+    <div class="insight-card">
+      <div class="insight-label"><span class="insight-label-icon">📊</span> Period Diagnosis (${analysisPeriod}D · ${daysLogged} days logged)</div>
+      <div class="diag-row">
+        <span class="diag-key">Avg daily score</span>
+        <span class="diag-val" style="color:${scoreGrade(avgScore).color}">${avgScore}/100 ${trendStr}</span>
+      </div>
+      ${bestDay ? `<div class="diag-row">
+        <span class="diag-key">Best day</span>
+        <span class="diag-val" style="color:${scoreGrade(bestDay.score).color}">${new Date(bestDay.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})} — ${bestDay.score}/100</span>
+      </div>` : ''}
+      ${worstDay && worstDay.date !== bestDay?.date ? `<div class="diag-row">
+        <span class="diag-key">Worst day</span>
+        <span class="diag-val" style="color:${scoreGrade(worstDay.score).color}">${new Date(worstDay.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})} — ${worstDay.score}/100</span>
+      </div>` : ''}
+      ${primaryGoal ? `<div class="diag-row">
+        <span class="diag-key">${primaryCats[0]} time</span>
+        <span class="diag-val">${primaryHpd.toFixed(1)}h/day avg</span>
+      </div>` : ''}
+      <div class="diag-row">
+        <span class="diag-key">Avg quality (productive)</span>
+        <span class="diag-val">${prodEntries.length ? 'P'+avgQuality.toFixed(1)+'/10' : '—'}</span>
+      </div>
+      <div class="diag-row">
+        <span class="diag-key">Untracked time</span>
+        <span class="diag-val" style="color:${untrackedPerDay>5?'#ef4444':untrackedPerDay>3?'#eab308':'var(--text)'}">${untrackedPerDay.toFixed(1)}h/day avg</span>
+      </div>
+    </div>
+
+    <!-- TIME LEAKS -->
+    ${leaks.length || untrackedPerDay > 5 ? `<div class="insight-card">
+      <div class="insight-label"><span class="insight-label-icon">🚨</span> Where You're Leaking Time</div>
+      ${leaks.map(l => `<div class="leak-row">
+        <div class="leak-dot" style="background:${CAT_COLORS[l.cat]}"></div>
+        <div class="leak-info">
+          <div class="leak-name">${l.cat}</div>
+          <div class="leak-sub">Goal weight: ${(weights[l.cat]*100).toFixed(0)}% · ${l.totalMin>0?(l.totalMin/60).toFixed(1)+'h total':''}</div>
+        </div>
+        <div class="leak-hrs">${l.hpd.toFixed(1)}h/day</div>
+      </div>`).join('')}
+      ${untrackedPerDay > 3 ? `<div class="leak-row">
+        <div class="leak-dot" style="background:#2a2a3a;border:1px solid var(--border)"></div>
+        <div class="leak-info">
+          <div class="leak-name">Untracked</div>
+          <div class="leak-sub">Time you haven't logged — invisible to your score</div>
+        </div>
+        <div class="leak-hrs">${untrackedPerDay.toFixed(1)}h/day</div>
+      </div>` : ''}
+    </div>` : ''}
+
+    <!-- WHAT'S WORKING -->
+    <div class="insight-card">
+      <div class="insight-label"><span class="insight-label-icon">✅</span> What's Working</div>
+      ${highQualProd.length ? `<div class="working-row">
+        <span class="working-tag" style="background:#14532d33;color:#22c55e">HIGH Q</span>
+        <span>${highQualProd.length} sessions at P8–10 — ${[...new Set(highQualProd.map(e=>e.category))].join(', ')}</span>
+      </div>` : ''}
+      ${peakHour ? `<div class="working-row">
+        <span class="working-tag" style="background:#1e1b4b;color:#6366f1">PEAK</span>
+        <span>Best quality window: ${peakHour.h}:00–${peakHour.h+2}:00 avg P${peakHour.avg.toFixed(1)}/10 (${peakHour.n} sessions)</span>
+      </div>` : ''}
+      ${CATEGORIES.filter(c=>weights[c]>=0.65&&catMin[c]>0).sort((a,b)=>(catQ[b].reduce((x,y)=>x+y,0)/catQ[b].length||0)-(catQ[a].reduce((x,y)=>x+y,0)/catQ[a].length||0)).slice(0,2).map(c=>{
+        const avgQ = catQ[c].length ? (catQ[c].reduce((a,b)=>a+b,0)/catQ[c].length).toFixed(1) : '–';
+        return `<div class="working-row">
+          <span class="working-tag" style="background:${CAT_COLORS[c]}22;color:${CAT_COLORS[c]}">${c.toUpperCase().slice(0,6)}</span>
+          <span>${c}: avg P${avgQ}/10 · ${(catMin[c]/60).toFixed(1)}h total</span>
+        </div>`;
+      }).join('')}
+      ${(!highQualProd.length && !peakHour) ? '<div style="font-size:12px;color:var(--muted)">Keep logging — patterns will emerge after a few more days.</div>' : ''}
+    </div>
+
+    <!-- ACTIONS -->
+    ${actions.length ? `<div class="insight-card">
+      <div class="insight-label"><span class="insight-label-icon">⚡</span> Priority Actions</div>
+      ${actions.map((a,i) => `<div class="action-item">
+        <div class="action-num">${i+1}</div>
+        <div class="action-body">
+          <div class="action-text">${a.text}</div>
+          <div class="action-impact">→ ${a.impact}</div>
+          <div class="action-why">${a.why}</div>
+        </div>
+      </div>`).join('')}
+    </div>` : ''}
+
+    <!-- COPY FOR CLAUDE -->
+    <button class="copy-analysis-btn" id="copyAnalysisBtn" onclick="copyAnalysisReport()">Copy full report for Claude →</button>
+  `;
+}
+
+function copyAnalysisReport() {
+  const weights = getActiveWeights();
+  const days = Array.from({length: analysisPeriod}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (analysisPeriod-1) + i);
+    return d.toISOString().split('T')[0];
+  });
+  const pe = entries.filter(e => days.includes(e.date));
+  const daysLogged = [...new Set(pe.map(e=>e.date))].length;
+  const catMin={},catQ={};
+  CATEGORIES.forEach(c=>{catMin[c]=0;catQ[c]=[];});
+  pe.forEach(e=>{catMin[e.category]+=e.duration;catQ[e.category].push(e.quality);});
+
+  let out = `TIME BLOOD TEST — DIAGNOSTIC REPORT\n`;
+  out += `Period: Last ${analysisPeriod} days (${daysLogged} days logged)\n`;
+  out += `Goals: ${userGoals.map(g=>GOAL_META[g].name).join(' + ') || 'Not set'}\n`;
+  out += `${'═'.repeat(50)}\n\n`;
+
+  const dayScores = days.map(d=>{const de=entries.filter(e=>e.date===d);return de.length?calcScore(de).score:null;}).filter(s=>s!==null);
+  const avgScore = dayScores.length ? Math.round(dayScores.reduce((a,b)=>a+b,0)/dayScores.length) : 0;
+  out += `OVERVIEW\nAvg score: ${avgScore}/100  |  Days logged: ${daysLogged}/${analysisPeriod}\n\n`;
+
+  out += `CATEGORY BREAKDOWN (by goal weight)\n${'─'.repeat(50)}\n`;
+  Object.entries(catMin).filter(([,m])=>m>0).sort((a,b)=>b[1]-a[1]).forEach(([cat,min])=>{
+    const hrs=(min/60).toFixed(1);
+    const avgQ=catQ[cat].length?(catQ[cat].reduce((a,b)=>a+b,0)/catQ[cat].length).toFixed(1):'–';
+    const w=(weights[cat]*100).toFixed(0);
+    out+=`${cat.padEnd(13)} ${hrs.padStart(5)}h  P${avgQ.padStart(4)}/10  GoalWeight:${w}%\n`;
+  });
+
+  out += `\nDAILY LOG\n${'─'.repeat(50)}\n`;
+  days.forEach(date=>{
+    const de=entries.filter(e=>e.date===date).sort((a,b)=>a.startTime.localeCompare(b.startTime));
+    if(!de.length)return;
+    const {score}=calcScore(de);
+    const g=scoreGrade(score);
+    const dn=new Date(date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'long',month:'short',day:'numeric'});
+    const dt=de.reduce((s,e)=>s+e.duration,0);
+    out+=`\n${dn} [${score}/100 ${g.label}] ${fmtDur(dt)}\n`;
+    de.forEach(e=>{ out+=`  ${e.startTime}–${e.endTime}  ${e.category.padEnd(12)}  P${e.quality}/10  ${e.what}\n`; });
+  });
+
+  out += `\n--- END OF REPORT ---\n\n`;
+  out += `Ask Claude: "Based on my goals (${userGoals.map(g=>GOAL_META[g]?.name||g).join(' + ')}), analyse my time allocation. What are my biggest leaks? How do I get my daily score above 75 consistently? Give me 3 specific changes for next week."`;
+
+  navigator.clipboard.writeText(out).then(() => {
+    const btn = document.getElementById('copyAnalysisBtn');
+    if (btn) { btn.textContent = '✓ Copied!'; btn.classList.add('copied'); setTimeout(()=>{btn.textContent='Copy full report for Claude →';btn.classList.remove('copied');},2000); }
+  });
+}
+
+function fmtDur(min){if(!min)return'0m';if(min<60)return`${min}m`;const h=Math.floor(min/60),m=min%60;return m?`${h}h ${m}m`:`${h}h`;}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+function showView(v,el){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  if (el) el.classList.add('active');
+  if(v==='analysis') renderAnalysis();
+}
+document.getElementById('whatInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitEntry();});
+</script>
+</body>
+</html>
