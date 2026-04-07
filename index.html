@@ -2738,7 +2738,7 @@ async function searchFriend() {
   const username = document.getElementById('friendSearchInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   const el = document.getElementById('friendSearchResults');
   if (!username) { el.innerHTML = ''; return; }
-  if (username === myUsername) { el.innerHTML = '<div class="search-result-msg">That's you!</div>'; return; }
+  if (username === myUsername) { el.innerHTML = '<div class="search-result-msg">That\'s you!</div>'; return; }
 
   const { data, error } = await sb.from('profiles').select('user_id,username').eq('username', username).maybeSingle();
   if (error || !data) { el.innerHTML = '<div class="search-result-msg">User not found</div>'; return; }
