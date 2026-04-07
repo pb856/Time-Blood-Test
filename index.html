@@ -1402,6 +1402,9 @@ function scoreGrade(s) {
 
 // ── STATE ──
 let entries = [], selectedCat = null, selectedQ = null;
+let lastCatUsed = null;
+let lastQualityByCat = {};
+let templates = [];
 let timerRunning = false, timerStart = null, timerCat = null;
 let chartPeriod = 7;
 let userGoals = []; // e.g. ['financial'] or ['financial','physical']
