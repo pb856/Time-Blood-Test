@@ -374,8 +374,9 @@
   /* ── LOG SHEET (bottom sheet) ── */
   .sheet-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 300;
-    backdrop-filter: blur(2px);
   }
+  .sheet-backdrop.hidden { display: none; }
+  .log-sheet.hidden { display: none; }
   .log-sheet {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 400;
     background: var(--surface); border-radius: 20px 20px 0 0;
