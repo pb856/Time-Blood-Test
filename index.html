@@ -331,6 +331,239 @@
   .sync-dot.syncing { background: #eab308; animation: pulse 1s infinite; }
   .sync-dot.synced  { background: #22c55e; }
   .sync-dot.error   { background: #ef4444; }
+
+  /* ── MOBILE / BOTTOM NAV ── */
+  body { padding-bottom: 68px; }
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: var(--bg); border-top: 1px solid var(--border);
+    display: flex; height: 60px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bnav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; background: none; border: none;
+    color: var(--muted); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.04em; cursor: pointer; transition: color .15s;
+    padding: 6px 0; -webkit-tap-highlight-color: transparent;
+  }
+  .bnav-btn.active { color: var(--accent); }
+  .bnav-btn:hover:not(.active) { color: var(--text); }
+  .bnav-icon { font-size: 20px; line-height: 1; }
+  .bnav-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── LOG VIEW (simplified) ── */
+  .log-view-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .log-today-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .log-today-score { font-size: 13px; font-weight: 700; }
+  .log-actions { display: flex; gap: 10px; margin-top: 16px; margin-bottom: 8px; }
+  .log-action-primary {
+    flex: 1; background: var(--accent); border: none; color: white;
+    padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all .15s; -webkit-tap-highlight-color: transparent;
+  }
+  .log-action-primary:active { transform: scale(.97); }
+  .log-action-timer {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 14px 18px; border-radius: 12px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .15s; -webkit-tap-highlight-color: transparent;
+  }
+  .log-action-timer.running { background: #ef4444; border-color: #ef4444; color: white; }
+  .log-action-timer:active { transform: scale(.97); }
+
+  /* ── LOG SHEET (bottom sheet) ── */
+  .sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 300;
+    backdrop-filter: blur(2px);
+  }
+  .log-sheet {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 400;
+    background: var(--surface); border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--border);
+    padding: 0 16px 32px; max-height: 92vh; overflow-y: auto;
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .log-sheet.open { transform: translateY(0); }
+  .sheet-handle {
+    width: 36px; height: 4px; background: var(--border); border-radius: 2px;
+    margin: 12px auto 20px;
+  }
+  .sheet-step-title {
+    font-size: 20px; font-weight: 800; margin-bottom: 4px;
+  }
+  .sheet-step-sub {
+    font-size: 12px; color: var(--muted); margin-bottom: 20px;
+  }
+  .step-dots { display: flex; gap: 6px; margin-bottom: 24px; }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background .2s; }
+  .step-dot.active { background: var(--accent); }
+
+  /* Duration presets */
+  .dur-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+  .dur-btn {
+    background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px;
+    color: var(--muted); font-size: 14px; font-weight: 700; padding: 12px 4px;
+    cursor: pointer; transition: all .12s; -webkit-tap-highlight-color: transparent;
+  }
+  .dur-btn:active { transform: scale(.95); }
+  .dur-btn.selected { background: var(--accent); border-color: var(--accent); color: white; }
+  .sheet-or { text-align: center; font-size: 11px; color: var(--muted); margin: 12px 0; }
+  .sheet-time-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .sheet-time-field { flex: 1; }
+  .sheet-time-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 5px; }
+  .sheet-timer-opt {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--muted); font-size: 13px; font-weight: 600; padding: 12px;
+    cursor: pointer; width: 100%; margin-bottom: 16px; transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sheet-timer-opt:hover { color: var(--text); border-color: var(--muted); }
+
+  .sheet-next {
+    background: var(--accent); border: none; color: white; padding: 14px;
+    border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
+    width: 100%; margin-top: 8px; transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sheet-next:active { transform: scale(.98); }
+  .sheet-back {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 600;
+    cursor: pointer; width: 100%; margin-top: 8px; transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sheet-what-input {
+    width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 16px; padding: 13px;
+    outline: none; transition: border-color .12s; font-family: inherit;
+    margin-bottom: 4px;
+  }
+  .sheet-what-input:focus { border-color: var(--accent); }
+  .sheet-start-btn {
+    background: #14532d33; border: 1px solid #22c55e66; color: #22c55e;
+    padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 700;
+    cursor: pointer; width: 100%; margin-top: 8px; transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Sheet cat grid */
+  .sheet-cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+  .sheet-cat-btn {
+    background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 12px 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+    text-align: center; transition: all .12s; color: var(--muted);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sheet-cat-btn:active { transform: scale(.96); }
+  .sheet-cat-btn.selected { color: white; }
+  .sheet-cat-btn[data-cat="Business"].selected  { background: var(--Business);    border-color: var(--Business); }
+  .sheet-cat-btn[data-cat="Training"].selected  { background: var(--Training);    border-color: var(--Training); }
+  .sheet-cat-btn[data-cat="School"].selected    { background: var(--School);      border-color: var(--School); }
+  .sheet-cat-btn[data-cat="Gaming"].selected    { background: var(--Gaming);      border-color: var(--Gaming); }
+  .sheet-cat-btn[data-cat="Consumption"].selected{ background: var(--Consumption);border-color: var(--Consumption); }
+  .sheet-cat-btn[data-cat="Life Admin"].selected{ background: var(--Life-Admin);  border-color: var(--Life-Admin); }
+  .sheet-cat-btn[data-cat="Social"].selected    { background: var(--Social);      border-color: var(--Social); }
+  .sheet-cat-btn[data-cat="Recovery"].selected  { background: var(--Recovery);    border-color: var(--Recovery); }
+
+  /* Sheet Q row */
+  .sheet-q-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 8px; }
+  .sheet-q-btn {
+    aspect-ratio: 1; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--surface2); color: var(--muted); font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all .1s; display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sheet-q-btn:active { transform: scale(.9); }
+  .sheet-q-btn.selected { color: white !important; border-color: transparent !important; }
+
+  /* ── USERNAME OVERLAY ── */
+  .username-overlay {
+    position: fixed; inset: 0; background: rgba(10,10,15,.98); z-index: 2500;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .username-overlay.hidden { display: none; }
+  .username-box { max-width: 380px; width: 100%; }
+  .username-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+  .username-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+  .username-hint { font-size: 11px; color: var(--muted); margin-top: 8px; margin-bottom: 16px; }
+
+  /* ── FRIENDS VIEW ── */
+  .friend-search-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .friend-search-input {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px; padding: 10px 12px;
+    outline: none; transition: border-color .12s; font-family: inherit;
+  }
+  .friend-search-input:focus { border-color: var(--accent); }
+  .friend-search-btn {
+    background: var(--accent); border: none; color: white; padding: 10px 16px;
+    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .search-result-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .search-result-name { font-size: 14px; font-weight: 600; }
+  .search-result-msg { font-size: 13px; color: var(--muted); padding: 10px 0; }
+  .add-friend-btn {
+    background: var(--accent); border: none; color: white; padding: 7px 14px;
+    border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .friend-status-tag { font-size: 11px; color: var(--muted); }
+  .friend-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; cursor: pointer; transition: border-color .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .friend-card:active { border-color: var(--muted); }
+  .friend-card-left { display: flex; flex-direction: column; gap: 2px; }
+  .friend-username { font-size: 14px; font-weight: 600; }
+  .friend-score-badge { font-size: 22px; font-weight: 800; }
+  .friend-score-label { font-size: 10px; color: var(--muted); }
+  .friend-actions { display: flex; gap: 8px; }
+  .accept-btn {
+    background: #14532d33; border: 1px solid #22c55e66; color: #22c55e;
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .decline-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .my-username-tag {
+    display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .my-username-tag strong { color: var(--text); }
+
+  /* ── FRIEND PROFILE OVERLAY ── */
+  .friend-profile-overlay {
+    position: fixed; inset: 0; background: var(--bg); z-index: 500;
+    overflow-y: auto; padding: 0 16px 80px;
+  }
+  .friend-profile-overlay.hidden { display: none; }
+  .fp-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .fp-back-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .fp-username-label { font-size: 18px; font-weight: 800; }
+  .fp-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; }
+  .fp-avg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; text-align: center; }
+  .fp-avg-score { font-size: 56px; font-weight: 800; line-height: 1; }
+  .fp-avg-grade { font-size: 13px; font-weight: 600; margin-top: 4px; letter-spacing: 0.08em; }
+  .friends-guest-msg { text-align: center; padding: 40px 20px; color: var(--muted); }
+
 </style>
 </head>
 <body>
@@ -356,6 +589,25 @@
     <button class="auth-submit" id="authSubmit" onclick="handleAuth()">Sign In</button>
     <div class="auth-divider">— or —</div>
     <button class="auth-guest" onclick="continueAsGuest()">Continue without account (local only)</button>
+  </div>
+</div>
+
+
+<!-- USERNAME SETUP OVERLAY -->
+<div class="username-overlay hidden" id="usernameOverlay">
+  <div class="username-box">
+    <div class="username-logo">👤</div>
+    <div class="username-title">Choose a username</div>
+    <div class="username-sub">Friends will find you and see your productivity scores by this name. You can't change it later.</div>
+    <div class="auth-field">
+      <label>Username</label>
+      <input type="text" id="usernameInput" placeholder="e.g. pb_builds" maxlength="20" autocomplete="off" autocapitalize="none" />
+    </div>
+    <div class="username-hint">3–20 characters. Letters, numbers, underscores only.</div>
+    <div class="auth-error" id="usernameError"></div>
+    <button class="auth-submit" id="usernameSubmitBtn" onclick="saveUsername()">Set Username →</button>
+    <div class="auth-divider">— or —</div>
+    <button class="auth-guest" onclick="skipUsername()">Skip for now (no friends)</button>
   </div>
 </div>
 
@@ -445,27 +697,18 @@
   </div>
 </div>
 
-<nav class="nav">
-  <div class="nav-title">🩸 Time Blood Test</div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showView('log',this)">Log</button>
-    <button class="nav-tab" onclick="showView('dash',this)">Dash</button>
-    <button class="nav-tab" onclick="showView('week',this)">7-Day</button>
-    <button class="nav-tab" onclick="showView('analysis',this)">Analysis</button>
-    <button class="nav-goal-btn" id="goalNavBtn" onclick="showGoalSetup()" title="Change goals">🎯</button>
-    <div class="nav-user" id="navUser" style="display:none">
-      <div class="sync-dot" id="syncDot" title="Sync status"></div>
-      <div class="nav-user-email" id="navUserEmail"></div>
-      <button class="nav-logout-btn" onclick="signOut()">Out</button>
-    </div>
-  </div>
-</nav>
+
 
 <!-- LOG -->
 <div id="view-log" class="view active">
-  <div class="log-header">
-    <h2>Quick Log</h2>
-    <button class="timer-btn" id="timerBtn" onclick="toggleTimer()">▶ Start Timer</button>
+  <div class="log-view-top">
+    <div>
+      <div class="log-today-label" id="logTodayLabel">Today</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="log-today-score" id="logTodayScore"></div>
+      <button class="nav-goal-btn" id="goalNavBtn" onclick="showGoalSetup()" title="Change goals" style="flex-shrink:0">🎯</button>
+    </div>
   </div>
 
   <div class="timer-running-display" id="timerDisplay">
@@ -477,41 +720,75 @@
     <div class="timer-elapsed" id="timerElapsed">0:00</div>
   </div>
 
-  <div class="log-form">
-    <div style="margin-bottom:10px">
-      <div class="input-label" style="margin-bottom:6px">Category</div>
-      <div class="cat-grid" id="catGrid"></div>
-    </div>
+  <div class="entry-list" id="entryList"></div>
 
-    <div class="form-row">
-      <div class="input-wrap">
-        <div class="input-label">What exactly</div>
-        <input type="text" id="whatInput" placeholder="e.g. cold outreach, chest & back, reading..." autocomplete="off" />
-      </div>
-    </div>
+  <div class="log-actions">
+    <button class="log-action-primary" onclick="openSheet()">+ Log Entry</button>
+    <button class="log-action-timer" id="timerBtn" onclick="toggleTimerBtn()">⏱ Timer</button>
+  </div>
+</div>
 
-    <div class="form-row" style="flex-wrap:wrap;gap:10px;">
-      <div class="input-wrap" style="flex:0 0 auto;">
-        <div class="input-label">Start</div>
-        <input type="time" id="startTime" style="width:120px" />
-      </div>
-      <div class="input-wrap" style="flex:0 0 auto;">
-        <div class="input-label">End</div>
-        <input type="time" id="endTime" style="width:120px" />
-      </div>
-    </div>
+<!-- LOG SHEET -->
+<div class="sheet-backdrop hidden" id="sheetBackdrop" onclick="closeSheet()"></div>
+<div class="log-sheet hidden" id="logSheet">
+  <div class="sheet-handle"></div>
 
-    <div style="margin-top:10px">
-      <div class="input-label" style="margin-bottom:6px">Productivity Rating — 1 = wasted time, 10 = peak focus &amp; output</div>
-      <div class="q-row" id="qRow"></div>
-      <div class="q-label-row"><span>Wasted</span><span>Peak</span></div>
-    </div>
-
-    <button class="submit-btn" onclick="submitEntry()">+ Log Entry</button>
+  <!-- Step dots -->
+  <div class="step-dots" id="stepDots">
+    <div class="step-dot active" id="sdot1"></div>
+    <div class="step-dot" id="sdot2"></div>
+    <div class="step-dot" id="sdot3"></div>
   </div>
 
-  <div class="section-title">Today's Entries</div>
-  <div class="entry-list" id="entryList"></div>
+  <!-- STEP 1: Duration -->
+  <div id="sheetStep1">
+    <div class="sheet-step-title">How long?</div>
+    <div class="sheet-step-sub">Pick a preset or enter exact times</div>
+    <div class="dur-presets" id="durPresets">
+      <button class="dur-btn" onclick="selectPreset(15,this)">15m</button>
+      <button class="dur-btn" onclick="selectPreset(30,this)">30m</button>
+      <button class="dur-btn" onclick="selectPreset(45,this)">45m</button>
+      <button class="dur-btn" onclick="selectPreset(60,this)">1h</button>
+      <button class="dur-btn" onclick="selectPreset(90,this)">1.5h</button>
+      <button class="dur-btn" onclick="selectPreset(120,this)">2h</button>
+      <button class="dur-btn" onclick="selectPreset(180,this)">3h</button>
+      <button class="dur-btn" onclick="selectPreset(240,this)">4h</button>
+    </div>
+    <div class="sheet-or">— or set exact times —</div>
+    <div class="sheet-time-row">
+      <div class="sheet-time-field">
+        <label>Start</label>
+        <input type="time" id="sheetStart" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;padding:10px;outline:none;" />
+      </div>
+      <div class="sheet-time-field">
+        <label>End</label>
+        <input type="time" id="sheetEnd" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;padding:10px;outline:none;" />
+      </div>
+    </div>
+    <button class="sheet-timer-opt" onclick="switchToTimerMode()">⏱ Use Live Timer Instead</button>
+    <button class="sheet-next" onclick="sheetNext(1)">Next →</button>
+  </div>
+
+  <!-- STEP 2: Category + What -->
+  <div id="sheetStep2" class="hidden">
+    <div class="sheet-step-title">What were you doing?</div>
+    <div class="sheet-step-sub">Pick a category and describe the session</div>
+    <div class="sheet-cat-grid" id="sheetCatGrid"></div>
+    <input type="text" class="sheet-what-input" id="sheetWhat" placeholder="e.g. cold outreach, chest & back, reading..." autocomplete="off" />
+    <button class="sheet-start-btn hidden" id="sheetStartTimerBtn" onclick="startTimerFromSheet()">⏱ Start Timer Now</button>
+    <button class="sheet-next" id="sheetStep2Next" onclick="sheetNext(2)">Next →</button>
+    <button class="sheet-back" onclick="sheetBack(2)">← Back</button>
+  </div>
+
+  <!-- STEP 3: Quality -->
+  <div id="sheetStep3" class="hidden">
+    <div class="sheet-step-title">Rate the quality</div>
+    <div class="sheet-step-sub">1 = wasted time · 10 = peak focus & output</div>
+    <div class="sheet-q-grid" id="sheetQRow"></div>
+    <div class="q-label-row" style="margin-bottom:20px"><span>Wasted</span><span>Peak</span></div>
+    <button class="sheet-next" onclick="submitFromSheet()">✓ Log Entry</button>
+    <button class="sheet-back" onclick="sheetBack(3)">← Back</button>
+  </div>
 </div>
 
 <!-- DASH -->
@@ -580,6 +857,41 @@
   <div id="analysisContent"></div>
 </div>
 
+
+<!-- FRIENDS -->
+<div id="view-friends" class="view">
+  <div id="friendsSignedOut" class="friends-guest-msg hidden">
+    <div style="font-size:32px;margin-bottom:12px">👥</div>
+    <div style="font-weight:600;margin-bottom:6px">Sign in to use Friends</div>
+    <div style="font-size:12px">Create an account to connect with friends and compare scores.</div>
+  </div>
+  <div id="friendsContent">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div id="myUsernameTag" class="my-username-tag hidden" style="margin-bottom:0"></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="friendsUserInfo" style="font-size:10px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+        <button onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:3px 8px;border-radius:5px;cursor:pointer;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--muted)'">Sign out</button>
+      </div>
+    </div>
+    <div class="friend-search-row">
+      <input type="text" class="friend-search-input" id="friendSearchInput" placeholder="Search by username..." autocapitalize="none" autocomplete="off" />
+      <button class="friend-search-btn" onclick="searchFriend()">Search</button>
+    </div>
+    <div id="friendSearchResults"></div>
+    <div id="pendingRequests"></div>
+    <div id="friendsList"></div>
+  </div>
+</div>
+
+<!-- FRIEND PROFILE OVERLAY -->
+<div class="friend-profile-overlay hidden" id="friendProfileOverlay">
+  <div class="fp-header">
+    <button class="fp-back-btn" onclick="closeFriendProfile()">← Back</button>
+    <div class="fp-username-label" id="fpUsername"></div>
+  </div>
+  <div id="fpContent"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -633,6 +945,8 @@ async function onSignedIn() {
   updateNavUser();
   await loadFromSupabase();
   renderAll();
+  await loadProfileAndFriends();
+  await syncDailyScore();
   if (!userGoals.length) showGoalSetup();
 }
 
@@ -643,13 +957,10 @@ function onSignedOut() {
 }
 
 function updateNavUser() {
-  const navUser = document.getElementById('navUser');
-  const navEmail = document.getElementById('navUserEmail');
-  if (currentUser) {
-    navUser.style.display = 'flex';
-    navEmail.textContent = currentUser.email;
-  } else {
-    navUser.style.display = 'none';
+  // Nav elements moved to friends view — update friends tab user info
+  const friendsUserEl = document.getElementById('friendsUserInfo');
+  if (friendsUserEl) {
+    friendsUserEl.textContent = currentUser ? currentUser.email : '';
   }
 }
 
@@ -726,6 +1037,7 @@ function continueAsGuest() {
   hideAuthOverlay();
   updateNavUser();
   load(); loadGoals(); renderAll();
+  renderFriendsSignedOut();
   if (!userGoals.length) showGoalSetup();
 }
 
@@ -970,6 +1282,8 @@ function loadGoals() { try { userGoals = JSON.parse(localStorage.getItem('tbt_go
 async function initApp() {
   buildCatGrid();
   buildQRow();
+  buildSheetCatGrid();
+  buildSheetQRow();
   setDefaultTimes();
   setInterval(() => { if(timerRunning) updateFocusDisplay(); }, 1000);
 
@@ -992,6 +1306,7 @@ initApp();
 
 function buildCatGrid() {
   const g = document.getElementById('catGrid');
+  if (!g) return;
   CATEGORIES.forEach(cat => {
     const b = document.createElement('button');
     b.className='cat-btn'; b.dataset.cat=cat; b.textContent=cat;
@@ -1001,6 +1316,7 @@ function buildCatGrid() {
 
 function buildQRow() {
   const r = document.getElementById('qRow');
+  if (!r) return;
   for (let q=1;q<=10;q++) {
     const b=document.createElement('button');
     b.className=`q-btn q${q}`; b.dataset.q=q; b.textContent=q;
@@ -1201,29 +1517,42 @@ function stopFocusTimer() {
 }
 
 function closeFocusAndStop() {
-  // If on break, end it cleanly first
+  const elapsed = focusElapsedSecs();
   if (breakActive) {
     timerPausedMs += Date.now() - timerPauseStart;
-    timerPaused = false;
-    breakActive = false;
+    timerPaused = false; breakActive = false;
   } else if (timerPaused) {
     timerPausedMs += Date.now() - timerPauseStart;
     timerPaused = false;
   }
-  timerRunning = false;
   const now = new Date();
-  document.getElementById('endTime').value = timeStr(now);
-  document.getElementById('startTime').value = timeStr(timerStart);
-  selectCat(timerCat);
+  const endT = timeStr(now);
+  const startT = timeStr(timerStart);
+  const dur = Math.max(1, Math.round(elapsed / 60));
+  const cat = timerCat;
+  timerRunning = false;
   document.getElementById('focusOverlay').classList.add('hidden');
-  document.getElementById('timerBtn').textContent = '▶ Start Timer';
+  document.getElementById('timerBtn').textContent = '⏱ Timer';
   document.getElementById('timerBtn').classList.remove('running');
   document.getElementById('timerDisplay').classList.remove('visible');
-  // Reset focus state
   timerPausedMs = 0; timerPauseStart = null; lastBlockNotified = 0;
   document.getElementById('focusPauseBtn').textContent = '⏸ Pause';
   document.getElementById('focusPauseBtn').classList.remove('primary');
-  document.getElementById('whatInput').focus();
+  // Pre-fill sheet for step 2
+  document.getElementById('sheetStart').value = startT;
+  document.getElementById('sheetEnd').value = endT;
+  sheetDuration = dur; sheetUsingPreset = false; sheetTimerMode = false;
+  sheetSelectedCat = cat; sheetSelectedQ = null;
+  document.getElementById('sheetWhat').value = '';
+  document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === cat));
+  document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('sheetStartTimerBtn').classList.add('hidden');
+  document.getElementById('sheetStep2Next').style.display = '';
+  showSheetStep(2);
+  document.getElementById('sheetBackdrop').classList.remove('hidden');
+  document.getElementById('logSheet').classList.remove('hidden');
+  requestAnimationFrame(() => document.getElementById('logSheet').classList.add('open'));
+  setTimeout(() => document.getElementById('sheetWhat').focus(), 300);
 }
 
 function submitEntry() {
@@ -1252,7 +1581,7 @@ function submitEntry() {
   renderAll();
 }
 
-function deleteEntry(id) { entries=entries.filter(e=>e.id!==id); save(); if(currentUser) deleteEntryFromDB(id); renderAll(); }
+function deleteEntry(id) { const ent=entries.find(e=>e.id===id); entries=entries.filter(e=>e.id!==id); save(); if(currentUser){ deleteEntryFromDB(id); if(ent) syncDailyScore(ent.date); } renderAll(); }
 
 function renderAll() { renderLog(); renderDash(); renderWeek(); renderAnalysis(); }
 
@@ -1468,6 +1797,16 @@ function hideChartTip() {
 // ── LOG ──
 function renderLog() {
   const today=new Date().toISOString().split('T')[0];
+  // Update log view header
+  const labelEl = document.getElementById('logTodayLabel');
+  const scoreEl = document.getElementById('logTodayScore');
+  if (labelEl) labelEl.textContent = new Date().toLocaleDateString('en-AU',{weekday:'long', day:'numeric', month:'short'});
+  const todayEntries = entries.filter(e=>e.date===today);
+  if (scoreEl && todayEntries.length) {
+    const {score} = calcScore(todayEntries);
+    const g = scoreGrade(score);
+    scoreEl.innerHTML = '<span style="color:'+g.color+'">'+score+'</span><span style="font-size:10px;color:var(--muted)">/100</span>';
+  } else if (scoreEl) { scoreEl.innerHTML=''; }
   const te=entries.filter(e=>e.date===today).sort((a,b)=>b.startTime.localeCompare(a.startTime));
   const list=document.getElementById('entryList');
   if (!te.length){list.innerHTML='<div class="empty"><div class="empty-icon">🩸</div><div>No entries today.<br>Start logging.</div></div>';return;}
@@ -2031,12 +2370,490 @@ function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function showView(v,el){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(x=>x.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
-  if (el) el.classList.add('active');
+  document.querySelectorAll('.bnav-btn[data-view="'+v+'"]').forEach(x=>x.classList.add('active'));
   if(v==='analysis') renderAnalysis();
+  if(v==='friends') { loadProfileAndFriends(); }
 }
-document.getElementById('whatInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitEntry();});
+// whatInput removed (now in sheet)
+
+// ══════════════════════════════════════════════════════════
+// SHEET (MULTI-STEP LOG)
+// ══════════════════════════════════════════════════════════
+let sheetSelectedCat = null;
+let sheetSelectedQ   = null;
+let sheetDuration    = null;
+let sheetUsingPreset = false;
+let sheetTimerMode   = false;
+
+function openSheet() {
+  sheetSelectedCat = null; sheetSelectedQ = null;
+  sheetDuration = null; sheetUsingPreset = false; sheetTimerMode = false;
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('sheetWhat').value = '';
+  document.getElementById('sheetStartTimerBtn').classList.add('hidden');
+  document.getElementById('sheetStep2Next').style.display = '';
+  const now = new Date();
+  document.getElementById('sheetEnd').value = timeStr(now);
+  document.getElementById('sheetStart').value = timeStr(new Date(now - 30*60000));
+  showSheetStep(1);
+  document.getElementById('sheetBackdrop').classList.remove('hidden');
+  document.getElementById('logSheet').classList.remove('hidden');
+  requestAnimationFrame(() => document.getElementById('logSheet').classList.add('open'));
+}
+
+function closeSheet() {
+  document.getElementById('logSheet').classList.remove('open');
+  setTimeout(() => {
+    document.getElementById('logSheet').classList.add('hidden');
+    document.getElementById('sheetBackdrop').classList.add('hidden');
+  }, 300);
+}
+
+function showSheetStep(n) {
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('sheetStep' + i).classList.toggle('hidden', i !== n);
+    document.getElementById('sdot' + i).classList.toggle('active', i <= n);
+  }
+}
+
+function selectPreset(mins, btn) {
+  sheetDuration = mins; sheetUsingPreset = true;
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const now = new Date();
+  document.getElementById('sheetEnd').value = timeStr(now);
+  document.getElementById('sheetStart').value = timeStr(new Date(now - mins * 60000));
+}
+
+function switchToTimerMode() {
+  sheetTimerMode = true;
+  showSheetStep(2);
+  document.getElementById('sheetStartTimerBtn').classList.remove('hidden');
+  document.getElementById('sheetStep2Next').style.display = 'none';
+}
+
+function sheetNext(from) {
+  if (from === 1) {
+    if (!sheetUsingPreset) {
+      const sv = document.getElementById('sheetStart').value;
+      const ev = document.getElementById('sheetEnd').value;
+      if (!sv || !ev) { toast('Set start and end time'); return; }
+      const today = new Date().toISOString().split('T')[0];
+      const sd = new Date(today + 'T' + sv + ':00');
+      let ed = new Date(today + 'T' + ev + ':00');
+      if (ed <= sd) ed = new Date(ed.getTime() + 86400000);
+      sheetDuration = Math.round((ed - sd) / 60000);
+      if (sheetDuration <= 0) { toast('End must be after start'); return; }
+    }
+    showSheetStep(2);
+    setTimeout(() => document.getElementById('sheetWhat').focus(), 200);
+  } else if (from === 2) {
+    if (!sheetSelectedCat) { toast('Pick a category'); return; }
+    showSheetStep(3);
+  }
+}
+
+function sheetBack(from) {
+  if (from === 2) {
+    sheetTimerMode = false;
+    document.getElementById('sheetStartTimerBtn').classList.add('hidden');
+    document.getElementById('sheetStep2Next').style.display = '';
+    showSheetStep(1);
+  } else if (from === 3) {
+    showSheetStep(2);
+  }
+}
+
+function selectSheetCat(cat) {
+  sheetSelectedCat = cat;
+  document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.cat === cat);
+  });
+}
+
+function selectSheetQ(q) {
+  sheetSelectedQ = q;
+  document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.q) === q);
+  });
+}
+
+function buildSheetCatGrid() {
+  const g = document.getElementById('sheetCatGrid');
+  if (!g || g.children.length > 0) return;
+  CATEGORIES.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'sheet-cat-btn'; b.dataset.cat = cat; b.textContent = cat;
+    b.onclick = () => selectSheetCat(cat); g.appendChild(b);
+  });
+}
+
+function buildSheetQRow() {
+  const r = document.getElementById('sheetQRow');
+  if (!r || r.children.length > 0) return;
+  for (let q = 1; q <= 10; q++) {
+    const b = document.createElement('button');
+    b.className = 'sheet-q-btn q' + q; b.dataset.q = q; b.textContent = q;
+    b.style.setProperty('--qc', ['','#ef4444','#f97316','#fb923c','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#14b8a6','#6366f1'][q]);
+    b.onclick = () => selectSheetQ(q); r.appendChild(b);
+  }
+}
+
+function startTimerFromSheet() {
+  if (!sheetSelectedCat) { toast('Pick a category first'); return; }
+  timerCat = sheetSelectedCat;
+  selectCat(sheetSelectedCat);
+  closeSheet();
+  setTimeout(() => {
+    timerRunning = true; timerPaused = false; timerPausedMs = 0;
+    timerPauseStart = null; breakActive = false; lastBlockNotified = 0;
+    timerStart = new Date();
+    document.getElementById('timerBtn').textContent = '⏱ Stop';
+    document.getElementById('timerBtn').classList.add('running');
+    openFocusOverlay();
+  }, 350);
+}
+
+function submitFromSheet() {
+  const what = document.getElementById('sheetWhat').value.trim();
+  if (!sheetSelectedCat) { toast('Pick a category'); return; }
+  if (!what) { toast('Add a description'); document.getElementById('sheetWhat').focus(); return; }
+  if (!sheetSelectedQ) { toast('Rate your productivity'); return; }
+  const sv = document.getElementById('sheetStart').value;
+  const ev = document.getElementById('sheetEnd').value;
+  const today = new Date().toISOString().split('T')[0];
+  let dur = sheetDuration;
+  if (!sheetUsingPreset && sv && ev) {
+    const sd = new Date(today + 'T' + sv + ':00');
+    let ed = new Date(today + 'T' + ev + ':00');
+    if (ed <= sd) ed = new Date(ed.getTime() + 86400000);
+    dur = Math.round((ed - sd) / 60000);
+  }
+  if (!dur || dur <= 0) { toast('Invalid duration'); return; }
+  const newEntry = {
+    id: Date.now().toString(), date: today,
+    startTime: sv || timeStr(new Date(Date.now() - dur*60000)),
+    endTime:   ev || timeStr(new Date()),
+    category: sheetSelectedCat, what, quality: sheetSelectedQ, duration: dur
+  };
+  entries.push(newEntry);
+  save();
+  if (currentUser) { syncEntry(newEntry); syncDailyScore(today); }
+  closeSheet();
+  toast('Logged ✓');
+  renderAll();
+}
+
+function toggleTimerBtn() {
+  if (!timerRunning) {
+    // Open sheet in timer mode — go straight to category step
+    sheetSelectedCat = null; sheetSelectedQ = null;
+    sheetDuration = null; sheetUsingPreset = false; sheetTimerMode = true;
+    document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('sheetWhat').value = '';
+    document.getElementById('sheetStartTimerBtn').classList.remove('hidden');
+    document.getElementById('sheetStep2Next').style.display = 'none';
+    showSheetStep(2);
+    document.getElementById('sheetBackdrop').classList.remove('hidden');
+    document.getElementById('logSheet').classList.remove('hidden');
+    requestAnimationFrame(() => document.getElementById('logSheet').classList.add('open'));
+  } else {
+    closeFocusAndStop();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// USERNAME + PROFILE
+// ══════════════════════════════════════════════════════════
+let myUsername = null;
+let usernameSkipped = false;
+
+function showUsernameOverlay() {
+  document.getElementById('usernameOverlay').classList.remove('hidden');
+}
+function hideUsernameOverlay() {
+  document.getElementById('usernameOverlay').classList.add('hidden');
+}
+function skipUsername() {
+  usernameSkipped = true;
+  hideUsernameOverlay();
+}
+
+async function saveUsername() {
+  if (!sb || !currentUser) return;
+  const raw = document.getElementById('usernameInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  const errEl = document.getElementById('usernameError');
+  errEl.classList.remove('visible');
+  if (raw.length < 3) { errEl.textContent = 'At least 3 characters'; errEl.classList.add('visible'); return; }
+  const btn = document.getElementById('usernameSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const { error } = await sb.from('profiles').insert({ user_id: currentUser.id, username: raw });
+  btn.disabled = false; btn.textContent = 'Set Username →';
+  if (error) {
+    errEl.textContent = error.code === '23505' ? 'Username taken — try another' : error.message;
+    errEl.classList.add('visible'); return;
+  }
+  myUsername = raw;
+  hideUsernameOverlay();
+  toast('@' + raw + ' is your username!');
+  updateMyUsernameTag();
+}
+
+function updateMyUsernameTag() {
+  const el = document.getElementById('myUsernameTag');
+  if (!el) return;
+  if (myUsername) {
+    el.innerHTML = 'Your username: <strong>@' + myUsername + '</strong>';
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// DAILY SCORE SYNC
+// ══════════════════════════════════════════════════════════
+async function syncDailyScore(date) {
+  if (!sb || !currentUser) return;
+  const d = date || new Date().toISOString().split('T')[0];
+  const dayEntries = entries.filter(e => e.date === d);
+  if (!dayEntries.length) return;
+  const { score } = calcScore(dayEntries);
+  const { error } = await sb.from('daily_scores').upsert({ user_id: currentUser.id, date: d, score });
+  if (error) console.error('syncDailyScore:', error);
+}
+
+// ══════════════════════════════════════════════════════════
+// FRIENDS SYSTEM
+// ══════════════════════════════════════════════════════════
+let friends = [];
+let pendingIncoming = [];
+
+async function loadProfileAndFriends() {
+  if (!sb || !currentUser) {
+    renderFriendsSignedOut(); return;
+  }
+  // Load my profile
+  const { data: profile } = await sb.from('profiles').select('username').eq('user_id', currentUser.id).maybeSingle();
+  if (profile) {
+    myUsername = profile.username;
+  } else if (!usernameSkipped) {
+    showUsernameOverlay();
+  }
+  updateMyUsernameTag();
+
+  // Load friendships
+  const { data: fs } = await sb.from('friendships')
+    .select('*')
+    .or('requester_id.eq.' + currentUser.id + ',addressee_id.eq.' + currentUser.id);
+
+  if (!fs) return;
+
+  const accepted = fs.filter(f => f.status === 'accepted');
+  const incoming = fs.filter(f => f.status === 'pending' && f.addressee_id === currentUser.id);
+
+  const friendIds = accepted.map(f => f.requester_id === currentUser.id ? f.addressee_id : f.requester_id);
+  const incomingIds = incoming.map(f => f.requester_id);
+  const allIds = [...new Set([...friendIds, ...incomingIds])];
+
+  let profiles = [], scores = [];
+  if (allIds.length) {
+    const { data: p } = await sb.from('profiles').select('user_id,username').in('user_id', allIds);
+    profiles = p || [];
+    if (friendIds.length) {
+      const { data: s } = await sb.from('daily_scores').select('user_id,date,score').in('user_id', friendIds).order('date', { ascending: false });
+      scores = s || [];
+    }
+  }
+
+  friends = accepted.map(f => {
+    const fid = f.requester_id === currentUser.id ? f.addressee_id : f.requester_id;
+    const prof = profiles.find(p => p.user_id === fid);
+    return { friendshipId: f.id, user_id: fid, username: prof?.username || '?', scores: scores.filter(s => s.user_id === fid) };
+  });
+
+  pendingIncoming = incoming.map(f => {
+    const prof = profiles.find(p => p.user_id === f.requester_id);
+    return { id: f.id, user_id: f.requester_id, username: prof?.username || '?' };
+  });
+
+  renderFriends();
+}
+
+function renderFriendsSignedOut() {
+  const el = document.getElementById('friendsSignedOut');
+  const content = document.getElementById('friendsContent');
+  if (el) el.classList.remove('hidden');
+  if (content) content.classList.add('hidden');
+}
+
+function renderFriends() {
+  const pending = document.getElementById('pendingRequests');
+  const list = document.getElementById('friendsList');
+  if (!pending || !list) return;
+
+  if (pendingIncoming.length) {
+    pending.innerHTML = '<div class="section-title" style="margin-bottom:8px">Requests</div>' +
+      pendingIncoming.map(r => `<div class="friend-card" style="cursor:default">
+        <div class="friend-card-left">
+          <div class="friend-username">@${r.username}</div>
+          <div style="font-size:11px;color:var(--muted)">wants to be friends</div>
+        </div>
+        <div class="friend-actions">
+          <button class="accept-btn" onclick="acceptFriend('${r.id}')">✓ Accept</button>
+          <button class="decline-btn" onclick="declineFriend('${r.id}')">✕</button>
+        </div>
+      </div>`).join('');
+  } else { pending.innerHTML = ''; }
+
+  const today = new Date().toISOString().split('T')[0];
+  if (!friends.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>No friends yet.<br>Search by username to add someone.</div>';
+    return;
+  }
+  list.innerHTML = '<div class="section-title" style="margin-bottom:8px">Friends</div>' +
+    friends.map(f => {
+      const todayScore = f.scores.find(s => s.date === today);
+      const g = todayScore ? scoreGrade(todayScore.score) : null;
+      return `<div class="friend-card" onclick="viewFriendProfile('${f.user_id}')">
+        <div class="friend-card-left">
+          <div class="friend-username">@${f.username}</div>
+          <div style="font-size:11px;color:var(--muted)">Tap to view scores</div>
+        </div>
+        ${todayScore
+          ? `<div style="text-align:right"><div class="friend-score-badge" style="color:${g.color}">${todayScore.score}</div><div class="friend-score-label">today</div></div>`
+          : `<div class="friend-score-label" style="color:var(--muted)">No data today</div>`
+        }
+      </div>`;
+    }).join('');
+}
+
+async function searchFriend() {
+  if (!sb || !currentUser) return;
+  const username = document.getElementById('friendSearchInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  const el = document.getElementById('friendSearchResults');
+  if (!username) { el.innerHTML = ''; return; }
+  if (username === myUsername) { el.innerHTML = '<div class="search-result-msg">That's you!</div>'; return; }
+
+  const { data, error } = await sb.from('profiles').select('user_id,username').eq('username', username).maybeSingle();
+  if (error || !data) { el.innerHTML = '<div class="search-result-msg">User not found</div>'; return; }
+
+  // Check existing
+  const { data: existing } = await sb.from('friendships').select('*')
+    .or('and(requester_id.eq.' + currentUser.id + ',addressee_id.eq.' + data.user_id + '),and(requester_id.eq.' + data.user_id + ',addressee_id.eq.' + currentUser.id + ')')
+    .maybeSingle();
+
+  let actionHtml = '';
+  if (existing) {
+    if (existing.status === 'accepted') actionHtml = '<span class="friend-status-tag">Already friends ✓</span>';
+    else if (existing.requester_id === currentUser.id) actionHtml = '<span class="friend-status-tag">Request sent</span>';
+    else actionHtml = `<button class="accept-btn" onclick="acceptFriend('${existing.id}')">Accept</button>`;
+  } else {
+    actionHtml = `<button class="add-friend-btn" onclick="sendFriendRequest('${data.user_id}')">+ Add Friend</button>`;
+  }
+  el.innerHTML = `<div class="search-result-card"><div class="search-result-name">@${data.username}</div>${actionHtml}</div>`;
+}
+
+async function sendFriendRequest(addresseeId) {
+  if (!sb || !currentUser) return;
+  const { error } = await sb.from('friendships').insert({ requester_id: currentUser.id, addressee_id: addresseeId, status: 'pending' });
+  if (error) { toast('Error sending request'); return; }
+  toast('Request sent!');
+  document.getElementById('friendSearchResults').innerHTML = '<div class="search-result-msg">Request sent ✓</div>';
+  document.getElementById('friendSearchInput').value = '';
+}
+
+async function acceptFriend(friendshipId) {
+  if (!sb || !currentUser) return;
+  const { error } = await sb.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+  if (error) { toast('Error'); return; }
+  toast('Friend added!');
+  await loadProfileAndFriends();
+}
+
+async function declineFriend(friendshipId) {
+  if (!sb || !currentUser) return;
+  await sb.from('friendships').delete().eq('id', friendshipId);
+  await loadProfileAndFriends();
+}
+
+async function viewFriendProfile(userId) {
+  const friend = friends.find(f => f.user_id === userId);
+  if (!friend) return;
+  document.getElementById('fpUsername').textContent = '@' + friend.username;
+  const overlay = document.getElementById('friendProfileOverlay');
+  overlay.classList.remove('hidden');
+  const content = document.getElementById('fpContent');
+  content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Loading…</div>';
+
+  // Last 7 days from cached scores
+  const days = Array.from({length:7}, (_,i) => { const d=new Date(); d.setDate(d.getDate()-6+i); return d.toISOString().split('T')[0]; });
+  const days7Html = `<div class="fp-section-title">Last 7 Days</div>
+    <div class="score-history" style="margin-bottom:16px">
+      ${days.map(date => {
+        const s = friend.scores.find(x => x.date === date);
+        const g = s ? scoreGrade(s.score) : null;
+        const lbl = new Date(date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short'});
+        return '<div class="score-day"><div class="score-day-label">'+lbl+'</div><div class="score-day-val" style="color:'+(s?g.color:'var(--muted)')+'">'+( s?s.score:'–')+'</div><div class="score-day-bar-wrap"><div class="score-day-bar-fill" style="width:'+(s?s.score:0)+'%;background:'+(s?g.color:'transparent')+'"></div></div></div>';
+      }).join('')}
+    </div>`;
+
+  // Load more from DB
+  let avgHtml = '';
+  if (sb && currentUser) {
+    const { data: more } = await sb.from('daily_scores').select('date,score').eq('user_id', userId).order('date',{ascending:false}).limit(30);
+    if (more && more.length >= 3) {
+      const avg = Math.round(more.reduce((s,x)=>s+x.score,0)/more.length);
+      const ag = scoreGrade(avg);
+      avgHtml = `<div class="fp-avg-card">
+        <div class="fp-section-title">30-Day Average</div>
+        <div class="fp-avg-score" style="color:${ag.color}">${avg}<span style="font-size:16px;color:var(--muted)">/100</span></div>
+        <div class="fp-avg-grade" style="color:${ag.color}">${ag.label}</div>
+      </div>`;
+    }
+  }
+  content.innerHTML = days7Html + avgHtml;
+}
+
+function closeFriendProfile() {
+  document.getElementById('friendProfileOverlay').classList.add('hidden');
+}
+
+// Search on Enter
+document.addEventListener('DOMContentLoaded', () => {
+  const si = document.getElementById('friendSearchInput');
+  if (si) si.addEventListener('keydown', e => { if (e.key==='Enter') searchFriend(); });
+});
+
 </script>
+
+<nav class="bottom-nav">
+  <button class="bnav-btn active" data-view="log" onclick="showView('log',this)">
+    <span class="bnav-icon">📝</span>
+    <span class="bnav-label">Log</span>
+  </button>
+  <button class="bnav-btn" data-view="dash" onclick="showView('dash',this)">
+    <span class="bnav-icon">📊</span>
+    <span class="bnav-label">Dash</span>
+  </button>
+  <button class="bnav-btn" data-view="week" onclick="showView('week',this)">
+    <span class="bnav-icon">📅</span>
+    <span class="bnav-label">7-Day</span>
+  </button>
+  <button class="bnav-btn" data-view="analysis" onclick="showView('analysis',this)">
+    <span class="bnav-icon">🔬</span>
+    <span class="bnav-label">Analysis</span>
+  </button>
+  <button class="bnav-btn" data-view="friends" onclick="showView('friends',this)">
+    <span class="bnav-icon">👥</span>
+    <span class="bnav-label">Friends</span>
+  </button>
+</nav>
+
 </body>
 </html>
