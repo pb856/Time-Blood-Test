@@ -4,7 +4,105 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Time Blood Test</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ══════════════════════════════════════════════════════════
+// SMART DEFAULTS
+// ══════════════════════════════════════════════════════════
+let lastCatUsed = null;
+let lastQualityByCat = {};
+
+function loadSmartDefaults() {
+  try { lastCatUsed = localStorage.getItem('tbt_lastcat') || null; } catch(e){}
+  try { lastQualityByCat = JSON.parse(localStorage.getItem('tbt_lastq')||'{}'); } catch(e){}
+}
+
+// ══════════════════════════════════════════════════════════
+// TEMPLATES
+// ══════════════════════════════════════════════════════════
+let templates = [];
+
+function loadTemplates() {
+  try { templates = JSON.parse(localStorage.getItem('tbt_templates')||'[]'); } catch(e){ templates=[]; }
+}
+function saveTemplates() {
+  localStorage.setItem('tbt_templates', JSON.stringify(templates));
+}
+
+function renderTemplates() {
+  const row = document.getElementById('templatesRow');
+  if (!row) return;
+  if (!templates.length) { row.innerHTML = ''; return; }
+  row.innerHTML = templates.map(t => `
+    <div class="template-chip" onclick="useTemplate('${t.id}')">
+      <div class="template-chip-dot" style="background:${CAT_COLORS[t.category]}"></div>
+      <span>${esc(t.what||t.category)}</span>
+      <button class="template-chip-x" onclick="event.stopPropagation();removeTemplate('${t.id}')" title="Remove">×</button>
+    </div>`).join('');
+}
+
+function pinEntry(entryId) {
+  const entry = entries.find(e => e.id === entryId);
+  if (!entry) return;
+  if (templates.length >= 6) { toast('Max 6 templates — remove one first'); return; }
+  if (templates.find(t => t.category === entry.category && t.what === entry.what)) { toast('Already saved ✓'); return; }
+  templates.push({ id: Date.now().toString(), category: entry.category, what: entry.what, quality: entry.quality });
+  saveTemplates();
+  toast('Saved as template 📌');
+  renderTemplates();
+}
+
+function removeTemplate(id) {
+  templates = templates.filter(t => t.id !== id);
+  saveTemplates();
+  renderTemplates();
+}
+
+function useTemplate(id) {
+  const t = templates.find(x => x.id === id);
+  if (!t) return;
+  sheetSelectedCat = t.category;
+  sheetSelectedQ = t.quality;
+  sheetDuration = null; sheetUsingPreset = false; sheetTimerMode = false;
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('sheetWhat').value = t.what || '';
+  document.getElementById('sheetStartTimerBtn').classList.add('hidden');
+  document.getElementById('sheetStep2Next').style.display = '';
+  document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === t.category));
+  document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.q) === t.quality));
+  const now = new Date();
+  document.getElementById('sheetEnd').value = timeStr(now);
+  document.getElementById('sheetStart').value = timeStr(new Date(now - 30*60000));
+  showSheetStep(1);
+  document.getElementById('sheetBackdrop').classList.remove('hidden');
+  document.getElementById('logSheet').classList.remove('hidden');
+  requestAnimationFrame(() => document.getElementById('logSheet').classList.add('open'));
+}
+
+// ══════════════════════════════════════════════════════════
+// QUICK REPEAT
+// ══════════════════════════════════════════════════════════
+function repeatEntry(entryId) {
+  const entry = entries.find(e => e.id === entryId);
+  if (!entry) return;
+  sheetSelectedCat = entry.category;
+  sheetSelectedQ = entry.quality;
+  sheetDuration = null; sheetUsingPreset = false; sheetTimerMode = false;
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('sheetWhat').value = entry.what || '';
+  document.getElementById('sheetStartTimerBtn').classList.add('hidden');
+  document.getElementById('sheetStep2Next').style.display = '';
+  document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === entry.category));
+  document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.q) === entry.quality));
+  const now = new Date();
+  document.getElementById('sheetEnd').value = timeStr(now);
+  document.getElementById('sheetStart').value = timeStr(new Date(now - 30*60000));
+  showSheetStep(1);
+  document.getElementById('sheetBackdrop').classList.remove('hidden');
+  document.getElementById('logSheet').classList.remove('hidden');
+  requestAnimationFrame(() => document.getElementById('logSheet').classList.add('open'));
+}
+
+</script>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -565,6 +663,40 @@
   .fp-avg-grade { font-size: 13px; font-weight: 600; margin-top: 4px; letter-spacing: 0.08em; }
   .friends-guest-msg { text-align: center; padding: 40px 20px; color: var(--muted); }
 
+
+  /* ── TEMPLATES ROW ── */
+  .templates-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+  .templates-row::-webkit-scrollbar { display: none; }
+  .template-chip {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 7px 12px; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--text);
+    transition: all .12s; -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+  }
+  .template-chip:active { transform: scale(.96); }
+  .template-chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .template-chip-x {
+    background: none; border: none; color: var(--muted); font-size: 13px;
+    padding: 0 0 0 2px; cursor: pointer; line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* ── ENTRY ACTIONS ── */
+  .entry-actions { display: flex; gap: 2px; flex-shrink: 0; }
+  .entry-repeat {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    padding: 4px 6px; border-radius: 4px; font-size: 15px;
+    -webkit-tap-highlight-color: transparent; transition: color .12s;
+  }
+  .entry-repeat:hover { color: var(--accent); }
+  .entry-pin {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    padding: 4px 6px; border-radius: 4px; font-size: 13px;
+    -webkit-tap-highlight-color: transparent; transition: color .12s;
+  }
+  .entry-pin:hover { color: #eab308; }
+
 </style>
 </head>
 <body>
@@ -723,6 +855,7 @@
 
   <div class="entry-list" id="entryList"></div>
 
+  <div class="templates-row" id="templatesRow"></div>
   <div class="log-actions">
     <button class="log-action-primary" onclick="openSheet()">+ Log Entry</button>
     <button class="log-action-timer" id="timerBtn" onclick="toggleTimerBtn()">⏱ Timer</button>
@@ -1285,6 +1418,8 @@ async function initApp() {
   buildQRow();
   buildSheetCatGrid();
   buildSheetQRow();
+  loadSmartDefaults();
+  loadTemplates();
   setDefaultTimes();
   setInterval(() => { if(timerRunning) updateFocusDisplay(); }, 1000);
 
@@ -1815,15 +1950,20 @@ function renderLog() {
     <div class="entry-card">
       <div class="entry-dot" style="background:${CAT_COLORS[e.category]}"></div>
       <div class="entry-info">
-        <div class="entry-what">${esc(e.what)}</div>
+        <div class="entry-what">${esc(e.what||e.category)}</div>
         <div class="entry-meta">${e.category} · ${e.startTime}–${e.endTime}</div>
       </div>
       <div class="entry-right">
         <div class="entry-dur">${fmtDur(e.duration)}</div>
         <div class="entry-q">P${e.quality}/10</div>
       </div>
-      <button class="entry-del" onclick="deleteEntry('${e.id}')">×</button>
+      <div class="entry-actions">
+        <button class="entry-repeat" onclick="repeatEntry('${e.id}')" title="Log again">↺</button>
+        <button class="entry-pin" onclick="pinEntry('${e.id}')" title="Save as template">📌</button>
+        <button class="entry-del" onclick="deleteEntry('${e.id}')">×</button>
+      </div>
     </div>`).join('');
+  renderTemplates();
 }
 
 // ── DASH ──
@@ -2389,17 +2529,26 @@ let sheetUsingPreset = false;
 let sheetTimerMode   = false;
 
 function openSheet() {
-  sheetSelectedCat = null; sheetSelectedQ = null;
   sheetDuration = null; sheetUsingPreset = false; sheetTimerMode = false;
   document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById('sheetWhat').value = '';
   document.getElementById('sheetStartTimerBtn').classList.add('hidden');
   document.getElementById('sheetStep2Next').style.display = '';
   const now = new Date();
   document.getElementById('sheetEnd').value = timeStr(now);
   document.getElementById('sheetStart').value = timeStr(new Date(now - 30*60000));
+  // Smart defaults
+  document.getElementById('sheetWhat').value = '';
+  if (lastCatUsed) {
+    sheetSelectedCat = lastCatUsed;
+    document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === lastCatUsed));
+    const q = lastQualityByCat[lastCatUsed];
+    if (q) { sheetSelectedQ = q; document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.q) === q)); }
+    else { sheetSelectedQ = null; document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.remove('selected')); }
+  } else {
+    sheetSelectedCat = null; sheetSelectedQ = null;
+    document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.remove('selected'));
+  }
   showSheetStep(1);
   document.getElementById('sheetBackdrop').classList.remove('hidden');
   document.getElementById('logSheet').classList.remove('hidden');
@@ -2428,6 +2577,8 @@ function selectPreset(mins, btn) {
   const now = new Date();
   document.getElementById('sheetEnd').value = timeStr(now);
   document.getElementById('sheetStart').value = timeStr(new Date(now - mins * 60000));
+  // Auto-advance to step 2 after short feedback delay
+  setTimeout(() => { showSheetStep(2); setTimeout(() => document.getElementById('sheetWhat').focus(), 150); }, 200);
 }
 
 function switchToTimerMode() {
@@ -2474,6 +2625,13 @@ function selectSheetCat(cat) {
   document.querySelectorAll('#sheetCatGrid .sheet-cat-btn').forEach(b => {
     b.classList.toggle('selected', b.dataset.cat === cat);
   });
+  // Pre-select last quality for this category
+  const q = lastQualityByCat[cat];
+  if (q) { sheetSelectedQ = q; document.querySelectorAll('#sheetQRow .sheet-q-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.q) === q)); }
+  // Auto-advance to step 3 (unless timer mode)
+  if (!sheetTimerMode) {
+    setTimeout(() => { if (sheetSelectedCat === cat) showSheetStep(3); }, 220);
+  }
 }
 
 function selectSheetQ(q) {
@@ -2520,9 +2678,8 @@ function startTimerFromSheet() {
 }
 
 function submitFromSheet() {
-  const what = document.getElementById('sheetWhat').value.trim();
+  const what = document.getElementById('sheetWhat').value.trim() || sheetSelectedCat;
   if (!sheetSelectedCat) { toast('Pick a category'); return; }
-  if (!what) { toast('Add a description'); document.getElementById('sheetWhat').focus(); return; }
   if (!sheetSelectedQ) { toast('Rate your productivity'); return; }
   const sv = document.getElementById('sheetStart').value;
   const ev = document.getElementById('sheetEnd').value;
@@ -2535,6 +2692,11 @@ function submitFromSheet() {
     dur = Math.round((ed - sd) / 60000);
   }
   if (!dur || dur <= 0) { toast('Invalid duration'); return; }
+  // Save smart defaults
+  lastCatUsed = sheetSelectedCat;
+  lastQualityByCat[sheetSelectedCat] = sheetSelectedQ;
+  localStorage.setItem('tbt_lastcat', lastCatUsed);
+  localStorage.setItem('tbt_lastq', JSON.stringify(lastQualityByCat));
   const newEntry = {
     id: Date.now().toString(), date: today,
     startTime: sv || timeStr(new Date(Date.now() - dur*60000)),
